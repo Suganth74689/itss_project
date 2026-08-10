@@ -1,4 +1,4 @@
-import { CustomerBasicInfo, Customer360Response } from './types';
+import type { CustomerBasicInfo, Customer360Response } from './types';
 
 const API_BASE = '/api';
 

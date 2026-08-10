@@ -1,122 +1,151 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from 'react';
+import { Header } from './components/Header';
+import { Sidebar, type ModuleType } from './components/Sidebar';
+import { Customer360 } from './pages/Customer360';
+import { KYCPreview } from './pages/KYCPreview';
+import { FAQPreview } from './pages/FAQPreview';
+import { LookalikePreview } from './pages/LookalikePreview';
+import { EvidenceDrawer } from './components/EvidenceDrawer';
+import { fetchCustomers, fetchCustomer360 } from './api';
+import type { CustomerBasicInfo, Customer360Response } from './types';
+import { Loader2, AlertCircle, RefreshCw, Layers } from 'lucide-react';
 
-function App() {
-  const [count, setCount] = useState(0)
+export function App() {
+  const [activeModule, setActiveModule] = useState<ModuleType>('b1-customer360');
+  const [customers, setCustomers] = useState<CustomerBasicInfo[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(100100);
+  const [c360Data, setC360Data] = useState<Customer360Response | null>(null);
+  
+  const [loading360, setLoading360] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [showEvidence, setShowEvidence] = useState<boolean>(false);
+
+  // Load customer list on startup
+  useEffect(() => {
+    async function loadCustomers() {
+      try {
+        const list = await fetchCustomers();
+        setCustomers(list);
+        if (list.length > 0 && !selectedCustomerId) {
+          setSelectedCustomerId(list[0].customer_id);
+        }
+      } catch (err: any) {
+        setError('Failed to connect to DuckDB Backend API');
+      }
+    }
+    loadCustomers();
+  }, []);
+
+  // Fetch Customer 360 profile whenever selected customer changes
+  useEffect(() => {
+    if (!selectedCustomerId) return;
+    async function load360() {
+      try {
+        setLoading360(true);
+        setError(null);
+        const data = await fetchCustomer360(selectedCustomerId!);
+        setC360Data(data);
+      } catch (err: any) {
+        setError(`Failed to load data for Customer ID ${selectedCustomerId}`);
+      } finally {
+        setLoading360(false);
+      }
+    }
+    load360();
+  }, [selectedCustomerId]);
+
+  const featuredCustomers = [100100, 100106, 100101, 100102, 100103];
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-[#0B0F19] text-gray-100 flex flex-col font-sans">
+      {/* Top Header Navigation */}
+      <Header
+        customers={customers}
+        selectedCustomerId={selectedCustomerId}
+        onSelectCustomer={(id) => setSelectedCustomerId(id)}
+        onToggleEvidence={() => setShowEvidence(!showEvidence)}
+        showEvidence={showEvidence}
+        citationCount={c360Data?.citations?.length || 0}
+      />
 
-      <div className="ticks"></div>
+      {/* Main Workspace Body */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Module Sidebar */}
+        <Sidebar activeModule={activeModule} onSelectModule={setActiveModule} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
+        {/* Dynamic Module Content View */}
+        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Quick Demo Customer Pills Bar */}
+          <div className="flex items-center justify-between bg-gray-900/60 border border-gray-800 p-3 rounded-xl">
+            <div className="flex items-center space-x-2 text-xs text-gray-400">
+              <Layers className="w-4 h-4 text-blue-400" />
+              <span className="font-semibold text-gray-300">Quick Interview Sample Customers:</span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {featuredCustomers.map((id) => (
+                <button
+                  key={id}
+                  onClick={() => setSelectedCustomerId(id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+                    selectedCustomerId === id
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
+                  }`}
                 >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+                  Customer {id}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          {/* Loading Indicator */}
+          {loading360 && (
+            <div className="glass-panel p-12 rounded-2xl flex flex-col items-center justify-center space-y-3">
+              <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+              <p className="text-sm text-gray-400 font-mono">Querying DuckDB database for Customer #{selectedCustomerId}...</p>
+            </div>
+          )}
+
+          {/* Error Notice */}
+          {error && !loading360 && (
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-rose-400" />
+                <span>{error}</span>
+              </div>
+              <button 
+                onClick={() => setSelectedCustomerId(selectedCustomerId || 100100)}
+                className="px-3 py-1 bg-rose-900/40 hover:bg-rose-900/60 text-xs text-white rounded-lg flex items-center gap-1 font-mono"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Retry
+              </button>
+            </div>
+          )}
+
+          {/* Module View Renderer */}
+          {!loading360 && c360Data && (
+            <>
+              {activeModule === 'b1-customer360' && (
+                <Customer360 data={c360Data} onOpenEvidence={() => setShowEvidence(true)} />
+              )}
+              {activeModule === 'b2-kyc' && <KYCPreview data={c360Data} />}
+              {activeModule === 'b3-faq' && <FAQPreview />}
+              {activeModule === 'b4-lookalike' && <LookalikePreview data={c360Data} />}
+            </>
+          )}
+        </main>
+      </div>
+
+      {/* Record Citation Evidence Slide-Over Drawer */}
+      <EvidenceDrawer
+        isOpen={showEvidence}
+        onClose={() => setShowEvidence(false)}
+        citations={c360Data?.citations || []}
+        customerId={selectedCustomerId}
+      />
+    </div>
+  );
 }
 
-export default App
+export default App;
