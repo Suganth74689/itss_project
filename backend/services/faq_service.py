@@ -30,7 +30,12 @@ CUSTOMER_INTENT_TRIGGERS = [
     "my balance", "working balance", "my account", "my loan", "my kyc",
     "kyc status", "overdue", "dpd", "suspicious", "my credit score",
     "my income", "my profile", "my limit", "my emi", "my details",
-    "who am i", "my status", "account balance", "loan details", "balance"
+    "who am i", "my status", "account balance", "loan details", "balance",
+    "how many loan", "how many loans", "loan account", "loan accounts",
+    "number of loans", "number of loan", "how many account", "how many accounts",
+    "number of accounts", "this user", "user have", "user has", "customer have",
+    "customer has", "do i have", "how much loan", "how much balance", "my transactions",
+    "loans", "accounts", "profile", "summary", "details", "loan"
 ]
 
 class FaqService:
@@ -88,12 +93,12 @@ class FaqService:
         Grounded strictly in DuckDB banking context.
         """
         prompt = (
-            f"You are an AI Banking Intelligence Assistant. Answer the user's question using ONLY the provided verified banking context.\n"
+            f"You are an AI Banking Intelligence Assistant. Answer the user's question directly, accurately, and concisely using ONLY the provided verified banking context.\n\n"
             f"Context Data:\n{context_facts}\n\n"
             f"User Question: {user_question}\n\n"
             f"Instructions:\n"
-            f"1. Be professional, clear, and concise.\n"
-            f"2. Cite key figures (balances, interest rates, DPD overdue days, KYC status).\n"
+            f"1. Answer the exact question asked (e.g. if asked how many loan accounts the user has, state the exact count and list them).\n"
+            f"2. Be professional, clear, and precise with all numbers (counts, balances, interest rates, DPD overdue days, KYC status).\n"
             f"3. Do not invent facts outside the provided context."
         )
 
@@ -163,10 +168,10 @@ class FaqService:
                 f"Hello{cust_name}! I am your Banking Intelligence RAG Assistant{cid_info}.\n\n"
                 f"You can ask me questions such as:\n"
                 f"• 'What is my total working balance?'\n"
+                f"• 'How many loan accounts do I have?'\n"
                 f"• 'Is my KYC status complete or expired?'\n"
                 f"• 'Do I have any overdue loan DPD?'\n"
-                f"• 'What are the current home loan interest rates?'\n"
-                f"• 'How do I reset my net banking password?'"
+                f"• 'What are the current home loan interest rates?'"
             )
             return FaqQueryResponse(
                 status="MATCHED",
@@ -192,7 +197,17 @@ class FaqService:
         if match_id:
             extracted_id = int(match_id.group(0))
 
-        is_customer_intent = any(trigger in q_lower for trigger in CUSTOMER_INTENT_TRIGGERS) or (extracted_id is not None and ("detail" in q_lower or "summary" in q_lower or "info" in q_lower or "profile" in q_lower))
+        # Check if question is about customer profile data
+        customer_keywords = [
+            "balance", "working balance", "account", "accounts", "loan", "loans",
+            "kyc", "status", "dpd", "overdue", "suspicious", "credit", "limit",
+            "income", "user", "customer", "my", "how many", "number of", "details"
+        ]
+        
+        is_customer_intent = (extracted_id is not None) and (
+            any(trigger in q_lower for trigger in CUSTOMER_INTENT_TRIGGERS) or
+            any(kw in q_lower for kw in customer_keywords)
+        )
 
         if is_customer_intent and extracted_id:
             c360 = CustomerService.get_customer_360(extracted_id)
@@ -201,49 +216,59 @@ class FaqService:
             if c360 and kyc:
                 c = c360.customer
                 ans_parts = [
-                    f"Hello {c.name_1} (Customer #{c.customer_id}). Here is your real-time account summary from our DuckDB core banking engine:"
+                    f"Hello {c.name_1} (Customer #{c.customer_id}). Here is your real-time account and loan summary from our DuckDB core banking engine:"
                 ]
 
-                if "balance" in q_lower or "account" in q_lower:
-                    ans_parts.append(f"• Total Working Balance: ₹{c360.total_working_balance:,.2f} across {len(c360.accounts)} active account(s).")
-                
-                if "loan" in q_lower or "dpd" in q_lower or "overdue" in q_lower or "emi" in q_lower:
-                    if len(c360.loans) > 0:
-                        ans_parts.append(f"• Loans & Exposure: ₹{c360.total_outstanding_loan:,.2f} outstanding principal across {len(c360.loans)} loan(s). Max DPD: {c360.max_days_past_due} Days Overdue.")
+                # Specific Loan Account Count & Breakdown
+                if "loan" in q_lower or "loans" in q_lower or "dpd" in q_lower or "overdue" in q_lower or "emi" in q_lower:
+                    loan_count = len(c360.loans)
+                    if loan_count > 0:
+                        ans_parts.append(f"• Active Loan Accounts Count: Customer #{c.customer_id} ({c.name_1}) has exactly {loan_count} active loan account(s).")
+                        loan_details_list = []
+                        for idx, ln in enumerate(c360.loans, 1):
+                            loan_details_list.append(
+                                f"  {idx}. {ln.product} LOAN (Loan ID #{ln.loan_id}): Outstanding ₹{ln.outstanding:,.2f} of Sanctioned ₹{ln.sanctioned_amount:,.2f} @ {ln.interest_rate}% p.a., Status: {ln.status} ({ln.days_past_due} Days DPD Overdue)"
+                            )
+                        ans_parts.append("\n".join(loan_details_list))
+                        ans_parts.append(f"• Total Aggregated Outstanding Loan Balance: ₹{c360.total_outstanding_loan:,.2f} (Max Overdue: {c360.max_days_past_due} DPD).")
                     else:
-                        ans_parts.append("• Loans & Exposure: No active loan contracts found on your profile.")
+                        ans_parts.append(f"• Active Loan Accounts Count: Customer #{c.customer_id} ({c.name_1}) has 0 active loan accounts.")
 
-                if "kyc" in q_lower or "status" in q_lower:
-                    ans_parts.append(f"• Regulatory KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified).")
+                # Account Balance Breakdown
+                if "balance" in q_lower or "account" in q_lower or "accounts" in q_lower:
+                    ans_parts.append(f"• Deposit & Savings Accounts Count: {len(c360.accounts)} active account(s).")
+                    acc_list = []
+                    for acc in c360.accounts:
+                        acc_list.append(f"  - {acc.account_title} (Acc #{acc.account_id}, {acc.product}): Working Balance ₹{acc.working_balance:,.2f} ({acc.currency})")
+                    ans_parts.append("\n".join(acc_list))
+                    ans_parts.append(f"• Total Aggregated Working Balance: ₹{c360.total_working_balance:,.2f}.")
 
-                if "suspicious" in q_lower or "alert" in q_lower or "transaction" in q_lower:
-                    ans_parts.append(f"• Transaction Monitoring: {c360.suspicious_txn_count} suspicious transaction alert(s) flagged.")
+                # KYC Status Breakdown
+                if "kyc" in q_lower or "status" in q_lower or "verified" in q_lower:
+                    ans_parts.append(f"• Regulatory e-KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified).")
 
-                if "limit" in q_lower or "credit" in q_lower:
-                    ans_parts.append(f"• Credit Limits: ₹{c360.total_approved_limit:,.2f} approved limit (Available: ₹{c360.total_available_limit:,.2f}).")
-
+                # Default Complete Context if generic
                 if len(ans_parts) == 1:
-                    ans_parts.append(f"• Working Balance: ₹{c360.total_working_balance:,.2f}")
-                    ans_parts.append(f"• KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified)")
-                    ans_parts.append(f"• Outstanding Loans: ₹{c360.total_outstanding_loan:,.2f} (Max DPD: {c360.max_days_past_due} Days)")
-                    ans_parts.append(f"• Monthly Income: ₹{c.monthly_income:,.2f} ({c.employment_type})")
+                    ans_parts.append(f"• Total Active Loans: {len(c360.loans)} loan account(s) totaling ₹{c360.total_outstanding_loan:,.2f} outstanding.")
+                    ans_parts.append(f"• Total Active Deposit Accounts: {len(c360.accounts)} account(s) totaling ₹{c360.total_working_balance:,.2f} working balance.")
+                    ans_parts.append(f"• Regulatory KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified).")
 
                 deterministic_ans = "\n".join(ans_parts)
 
                 rag_citations = [
                     CitationEvidence(
-                        table="customers.csv",
+                        table="loans.csv",
                         record_id=str(c.customer_id),
-                        field_name="kyc_status",
-                        value=kyc.overall_status,
-                        description=f"Regulatory KYC Status for {c.name_1}"
+                        field_name="loan_count",
+                        value=str(len(c360.loans)),
+                        description=f"Total active loan accounts count for {c.name_1}"
                     ),
                     CitationEvidence(
-                        table="customers.csv",
+                        table="loans.csv",
                         record_id=str(c.customer_id),
-                        field_name="monthly_income",
-                        value=f"₹{c.monthly_income:,.2f}",
-                        description="Declared monthly income"
+                        field_name="outstanding",
+                        value=f"₹{c360.total_outstanding_loan:,.2f}",
+                        description="Total aggregated loan outstanding balance"
                     ),
                     CitationEvidence(
                         table="accounts.csv",
