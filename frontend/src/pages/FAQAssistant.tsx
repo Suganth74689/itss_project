@@ -142,85 +142,80 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
       {/* 3. Query Result Renderer */}
       {queryResult && (
         <div className="space-y-4 animate-fade-in">
-          {/* A. Customer-Specific RAG Answer Card */}
-          {queryResult.query_type === 'CUSTOMER_SPECIFIC' && (
-            <div className="glass-panel p-6 rounded-2xl border border-blue-500/30 bg-blue-950/10 space-y-4 shadow-xl">
+          {/* A. MATCHED QUERY ANSWER CARD (CUSTOMER OR BANKING FAQ) */}
+          {queryResult.status === 'MATCHED' && (
+            <div className={`glass-panel p-6 rounded-2xl border ${
+              queryResult.query_type === 'CUSTOMER_SPECIFIC'
+                ? 'border-blue-500/30 bg-blue-950/10'
+                : 'border-purple-500/30 bg-purple-950/10'
+            } space-y-4 shadow-xl`}>
               <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                 <div className="flex items-center space-x-2.5">
-                  <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
-                    <User className="w-5 h-5" />
+                  <div className={`p-2 rounded-xl border ${
+                    queryResult.query_type === 'CUSTOMER_SPECIFIC'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                      : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                  }`}>
+                    {queryResult.query_type === 'CUSTOMER_SPECIFIC' ? <User className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white">Customer 360 Live RAG Fact Retrieval</h3>
+                    <h3 className="text-base font-bold text-white">
+                      {queryResult.matched_faq?.question || (queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Customer 360 RAG Response (${queryResult.customer_name || 'Selected Customer'})` : queryResult.user_question)}
+                    </h3>
                     <p className="text-xs text-gray-400 font-mono">
-                      Target: {queryResult.customer_name} (Customer #{queryResult.customer_id})
+                      {queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Live DuckDB Core Banking Retrieval` : `Banking Policy Knowledge Engine`}
                     </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 text-xs font-mono font-bold">
-                  HIGH CONFIDENCE (0.98 Match)
+                <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
+                  queryResult.confidence_score === 'HIGH'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                    : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                }`}>
+                  {queryResult.confidence_score} CONFIDENCE ({queryResult.similarity_score})
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-gray-900/80 border border-gray-800 text-gray-100 text-xs font-mono leading-relaxed whitespace-pre-line space-y-2">
+              {/* Answer Content */}
+              <div className="p-4 rounded-xl bg-gray-900/80 border border-gray-800 text-gray-100 text-xs font-mono leading-relaxed whitespace-pre-line">
                 {queryResult.answer}
               </div>
 
+              {/* Grounding Evidence Citations */}
               {queryResult.citations && queryResult.citations.length > 0 && (
                 <div className="flex items-center justify-between pt-2 border-t border-gray-800 text-xs font-mono">
                   <span className="text-gray-400">Grounding Evidence: {queryResult.citations.length} DuckDB record citations</span>
                   <button
                     onClick={onOpenEvidence}
-                    className="text-blue-400 hover:text-blue-300 font-semibold underline flex items-center gap-1"
+                    className="text-purple-400 hover:text-purple-300 font-semibold underline flex items-center gap-1"
                   >
                     <span>View Evidence Drawer →</span>
                   </button>
                 </div>
               )}
+
+              {/* Related FAQs */}
+              {queryResult.suggested_related_faqs && queryResult.suggested_related_faqs.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-gray-800">
+                  <span className="text-[11px] font-mono text-gray-400 block">Related Banking FAQs:</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {queryResult.suggested_related_faqs.map((rf) => (
+                      <button
+                        key={rf.id}
+                        onClick={() => handleSearch(rf.question)}
+                        className="p-2.5 rounded-xl bg-gray-900/60 border border-gray-800/80 text-left hover:border-purple-500/40 transition-all text-xs text-gray-300 font-medium flex items-center justify-between"
+                      >
+                        <span className="line-clamp-1">{rf.question}</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-purple-400 shrink-0 ml-2" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* B. Banking Policy FAQ Matched Card */}
-          {queryResult.query_type === 'BANKING_FAQ' && queryResult.matched_faq && (
-            <div className="glass-panel p-6 rounded-2xl border border-purple-500/30 bg-purple-950/10 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-                <div className="flex items-center space-x-2.5">
-                  <div className="p-2 bg-purple-500/10 rounded-xl text-purple-400 border border-purple-500/20">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">{queryResult.matched_faq.question}</h3>
-                    <p className="text-xs text-gray-400 font-mono">Category: {queryResult.matched_faq.category}</p>
-                  </div>
-                </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold">
-                  {queryResult.confidence_score} CONFIDENCE ({queryResult.similarity_score})
-                </span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-gray-900/80 border border-gray-800 text-gray-200 text-xs font-sans leading-relaxed">
-                {queryResult.answer}
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-gray-800">
-                <span className="text-[11px] font-mono text-gray-400 block">Related Banking FAQs:</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {queryResult.suggested_related_faqs.map((rf) => (
-                    <button
-                      key={rf.id}
-                      onClick={() => handleSearch(rf.question)}
-                      className="p-2.5 rounded-xl bg-gray-900/60 border border-gray-800/80 text-left hover:border-purple-500/40 transition-all text-xs text-gray-300 font-medium flex items-center justify-between"
-                    >
-                      <span className="line-clamp-1">{rf.question}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-purple-400 shrink-0 ml-2" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* C. Out-of-Scope Refusal Card */}
+          {/* B. OUT-OF-SCOPE REFUSAL CARD */}
           {queryResult.status === 'REFUSED' && (
             <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 space-y-4 shadow-xl">
               <div className="flex items-center space-x-3 border-b border-rose-500/20 pb-3">

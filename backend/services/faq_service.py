@@ -18,11 +18,15 @@ NON_BANKING_TRIGGERS = [
     "weather", "temperature", "tell me a joke", "song", "who won", "capital of"
 ]
 
+GREETING_TRIGGERS = [
+    "hi", "hello", "hey", "help", "who are you", "what can you do", "start", "good morning", "good evening"
+]
+
 CUSTOMER_INTENT_TRIGGERS = [
     "my balance", "working balance", "my account", "my loan", "my kyc",
     "kyc status", "overdue", "dpd", "suspicious", "my credit score",
     "my income", "my profile", "my limit", "my emi", "my details",
-    "who am i", "my status", "account balance", "loan details"
+    "who am i", "my status", "account balance", "loan details", "balance"
 ]
 
 class FaqService:
@@ -56,6 +60,7 @@ class FaqService:
                     query_type="REFUSED",
                     user_question=q_raw,
                     customer_id=req.customer_id,
+                    answer=None,
                     confidence_score="REFUSED",
                     similarity_score=0.0,
                     explanation=f"Out-of-scope query detected matching prohibited trigger '{trigger}'.",
@@ -64,21 +69,53 @@ class FaqService:
                     citations=[]
                 )
 
-        # 2. CHECK CUSTOMER-SPECIFIC RAG INTENT
-        # Extract explicit customer ID from prompt if mentioned (e.g. "for 100106" or "customer 100100")
+        # 2. GREETING & GENERAL ASSISTANCE HELP INTENT
+        if q_lower in GREETING_TRIGGERS or q_lower.startswith(("hi", "hello", "hey")):
+            cust_name = ""
+            cid_info = ""
+            if req.customer_id:
+                c_prof = CustomerService.get_customer_profile(req.customer_id)
+                if c_prof:
+                    cust_name = f" {c_prof.name_1}"
+                    cid_info = f" (Customer #{req.customer_id})"
+
+            greeting_ans = (
+                f"Hello{cust_name}! I am your Banking Intelligence RAG Assistant{cid_info}.\n\n"
+                f"You can ask me questions such as:\n"
+                f"• 'What is my total working balance?'\n"
+                f"• 'Is my KYC status complete or expired?'\n"
+                f"• 'Do I have any overdue loan DPD?'\n"
+                f"• 'What are the current home loan interest rates?'\n"
+                f"• 'How do I reset my net banking password?'"
+            )
+            return FaqQueryResponse(
+                status="MATCHED",
+                query_type="BANKING_FAQ",
+                user_question=q_raw,
+                customer_id=req.customer_id,
+                customer_name=cust_name.strip() if cust_name else None,
+                answer=greeting_ans,
+                matched_faq=None,
+                confidence_score="HIGH",
+                similarity_score=1.0,
+                explanation="Assistant greeting and capabilities guide.",
+                suggested_related_faqs=faqs[:3],
+                citations=[]
+            )
+
+        # 3. CHECK CUSTOMER-SPECIFIC RAG INTENT
         extracted_id = req.customer_id
         match_id = re.search(r'\b100\d{3}\b', q_lower)
         if match_id:
             extracted_id = int(match_id.group(0))
 
-        is_customer_intent = any(trigger in q_lower for trigger in CUSTOMER_INTENT_TRIGGERS) or (extracted_id is not None and ("details" in q_lower or "summary" in q_lower or "info" in q_lower))
+        is_customer_intent = any(trigger in q_lower for trigger in CUSTOMER_INTENT_TRIGGERS) or (extracted_id is not None and ("detail" in q_lower or "summary" in q_lower or "info" in q_lower or "profile" in q_lower))
 
         if is_customer_intent and extracted_id:
             c360 = CustomerService.get_customer_360(extracted_id)
             kyc = KycService.evaluate_customer_kyc(extracted_id)
 
             if c360 and kyc:
-                # Build Contextual Natural Language Answer from DuckDB RAG facts
                 c = c360.customer
                 ans_parts = [
                     f"Hello {c.name_1} (Customer #{c.customer_id}). Here is your real-time account summary from our DuckDB core banking engine:"
@@ -87,7 +124,7 @@ class FaqService:
                 if "balance" in q_lower or "account" in q_lower:
                     ans_parts.append(f"• Total Working Balance: ₹{c360.total_working_balance:,.2f} across {len(c360.accounts)} active account(s).")
                 
-                if "loan" in q_lower or "dpd" in q_lower or "overdue" in q_lower:
+                if "loan" in q_lower or "dpd" in q_lower or "overdue" in q_lower or "emi" in q_lower:
                     if len(c360.loans) > 0:
                         ans_parts.append(f"• Loans & Exposure: ₹{c360.total_outstanding_loan:,.2f} outstanding principal across {len(c360.loans)} loan(s). Max DPD: {c360.max_days_past_due} Days Overdue.")
                     else:
@@ -111,7 +148,6 @@ class FaqService:
 
                 customer_answer = "\n".join(ans_parts)
 
-                # Deterministic field citations for Evidence Drawer
                 rag_citations = [
                     CitationEvidence(
                         table="customers.csv",
@@ -132,7 +168,7 @@ class FaqService:
                         record_id=str(c.customer_id),
                         field_name="working_balance",
                         value=f"₹{c360.total_working_balance:,.2f}",
-                        description=f"Total aggregated working balance"
+                        description="Total aggregated working balance"
                     )
                 ]
 
@@ -151,7 +187,7 @@ class FaqService:
                     citations=rag_citations
                 )
 
-        # 3. GENERAL BANKING POLICY RAG SEARCH
+        # 4. GENERAL BANKING POLICY RAG SEARCH
         best_faq: Optional[FaqItem] = None
         highest_score = 0.0
 
@@ -164,7 +200,6 @@ class FaqService:
             overlap = len(q_words.intersection(f_words))
             score = overlap / max(len(q_words), 1)
 
-            # Keyword boost
             for kw in faq.keywords:
                 if kw.lower() in q_lower:
                     score += 0.25
@@ -173,9 +208,9 @@ class FaqService:
                 highest_score = score
                 best_faq = faq
 
-        # Confidence Threshold
-        if highest_score >= 0.18 and best_faq:
-            confidence = "HIGH" if highest_score >= 0.45 else "MEDIUM"
+        # Confidence Threshold (lowered to 0.10 for maximum responsiveness)
+        if highest_score >= 0.10 and best_faq:
+            confidence = "HIGH" if highest_score >= 0.35 else "MEDIUM"
             related = [f for f in faqs if f.id in best_faq.related_faqs or (f.category == best_faq.category and f.id != best_faq.id)]
             
             return FaqQueryResponse(
@@ -200,12 +235,13 @@ class FaqService:
                 ]
             )
 
-        # 4. REFUSAL FOR UNMATCHED OR UNCLEAR PROMPTS
+        # 5. REFUSAL FOR UNMATCHED OR UNCLEAR PROMPTS
         return FaqQueryResponse(
             status="REFUSED",
             query_type="REFUSED",
             user_question=q_raw,
             customer_id=req.customer_id,
+            answer=None,
             confidence_score="REFUSED",
             similarity_score=round(highest_score, 3),
             explanation="The prompt could not be matched with high confidence to any verified banking policy or customer profile.",
