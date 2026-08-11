@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from db import get_db
+from db import fetch_one_dict, execute_write
 from services.customer_service import CustomerService
 from schemas import (
     KycAssessmentResponse, KycCategorySummary, KycFieldItem,
@@ -141,10 +141,8 @@ class KycService:
 
     @classmethod
     def verify_customer_document(cls, customer_id: int, req: KycVerifyDocumentRequest) -> KycVerifyDocumentResponse:
-        conn = get_db()
-        
-        # Check if customer exists
-        cust = conn.execute("SELECT customer_id, name_1 FROM customers WHERE customer_id = ?", [customer_id]).fetchone()
+        # Thread-safe dictionary fetch
+        cust = fetch_one_dict("SELECT customer_id, name_1 FROM customers WHERE customer_id = ?", [customer_id])
         if not cust:
             return KycVerifyDocumentResponse(
                 success=False,
@@ -152,8 +150,8 @@ class KycService:
                 updated_assessment=None
             )
 
-        # Execute dynamic SQL UPDATE in DuckDB database
-        conn.execute(
+        # Execute dynamic SQL UPDATE under thread lock
+        execute_write(
             "UPDATE customers SET kyc_status = 'COMPLETE' WHERE customer_id = ?",
             [customer_id]
         )
@@ -161,8 +159,9 @@ class KycService:
         # Re-evaluate updated customer KYC assessment
         updated_assessment = cls.evaluate_customer_kyc(customer_id)
 
+        name = cust.get("name_1") or "Customer"
         doc_ref = f" (Ref #{req.document_number})" if req.document_number else ""
-        msg = f"Successfully verified document '{req.document_type}'{doc_ref} for {cust[1]}. DuckDB database updated dynamically: KYC status changed to COMPLETE (100% Verified)."
+        msg = f"Successfully verified document '{req.document_type}'{doc_ref} for {name}. DuckDB database updated dynamically: KYC status changed to COMPLETE (100% Verified)."
 
         return KycVerifyDocumentResponse(
             success=True,

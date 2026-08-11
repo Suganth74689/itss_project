@@ -1,6 +1,6 @@
 import math
 from typing import List, Dict, Any, Optional
-from db import get_db
+from db import fetch_all_dict
 from schemas import (
     LookalikeResponse, LookalikeMatchItem, CitationEvidence
 )
@@ -8,8 +8,6 @@ from schemas import (
 class CustomerSimilarityService:
     @classmethod
     def get_lookalikes(cls, target_customer_id: int, top_n: int = 5) -> Optional[LookalikeResponse]:
-        conn = get_db()
-
         # Fast 1-millisecond single SQL aggregation query across all 6 tables in DuckDB
         query = """
             SELECT 
@@ -43,24 +41,24 @@ class CustomerSimilarityService:
             ORDER BY c.customer_id ASC;
         """
 
-        rows = conn.execute(query).fetchall()
+        rows = fetch_all_dict(query)
         if not rows:
             return None
 
         feature_matrix: Dict[int, Dict[str, Any]] = {}
         for r in rows:
-            cid = r[0]
+            cid = int(r.get("customer_id") or 0)
             feature_matrix[cid] = {
                 "customer_id": cid,
-                "name_1": str(r[1]),
-                "kyc_status": str(r[2]),
-                "employment_type": str(r[3]),
-                "monthly_income": float(r[4] or 0),
-                "total_working_balance": float(r[5] or 0),
-                "total_outstanding_loan": float(r[6] or 0),
-                "max_days_past_due": int(r[7] or 0),
-                "credit_score": int(r[8] or 650),
-                "suspicious_txn_count": int(r[9] or 0)
+                "name_1": str(r.get("name_1") or "Unknown"),
+                "kyc_status": str(r.get("kyc_status") or "UNKNOWN"),
+                "employment_type": str(r.get("employment_type") or "OTHER"),
+                "monthly_income": float(r.get("monthly_income") or 0),
+                "total_working_balance": float(r.get("total_working_balance") or 0),
+                "total_outstanding_loan": float(r.get("total_outstanding_loan") or 0),
+                "max_days_past_due": int(r.get("max_days_past_due") or 0),
+                "credit_score": int(r.get("credit_score") or 650),
+                "suspicious_txn_count": int(r.get("suspicious_txn_count") or 0)
             }
 
         if target_customer_id not in feature_matrix:

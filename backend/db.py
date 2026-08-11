@@ -2,6 +2,7 @@ import os
 import duckdb
 import threading
 from pathlib import Path
+from typing import List, Dict, Any, Optional
 
 # Path to dataset directory
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,26 +14,58 @@ _db_lock = threading.Lock()
 
 def get_master_db():
     global _master_conn
-    with _db_lock:
-        if _master_conn is None:
-            # In-memory DuckDB connection
-            _master_conn = duckdb.connect(database=":memory:", read_only=False)
-            init_db(_master_conn)
-        return _master_conn
+    if _master_conn is None:
+        _master_conn = duckdb.connect(database=":memory:", read_only=False)
+        init_db(_master_conn)
+    return _master_conn
 
 def get_db():
     """
-    Returns a thread-safe cursor from the master DuckDB connection.
-    This guarantees concurrent HTTP requests in FastAPI threadpool never collide.
+    Returns master connection for backwards compatibility.
     """
-    master = get_master_db()
+    return get_master_db()
+
+def fetch_all_dict(sql: str, params: list = None) -> List[Dict[str, Any]]:
+    """
+    Thread-safe execution returning a list of dictionaries keyed by column name.
+    """
     with _db_lock:
-        return master.cursor()
+        conn = get_master_db()
+        cur = conn.cursor()
+        res = cur.execute(sql, params or [])
+        cols = [d[0] for d in res.description]
+        rows = res.fetchall()
+        return [dict(zip(cols, r)) for r in rows]
+
+def fetch_one_dict(sql: str, params: list = None) -> Optional[Dict[str, Any]]:
+    """
+    Thread-safe execution returning a single dictionary keyed by column name.
+    """
+    with _db_lock:
+        conn = get_master_db()
+        cur = conn.cursor()
+        res = cur.execute(sql, params or [])
+        if not res.description:
+            return None
+        cols = [d[0] for d in res.description]
+        r = res.fetchone()
+        if not r:
+            return None
+        return dict(zip(cols, r))
+
+def execute_write(sql: str, params: list = None) -> int:
+    """
+    Thread-safe execution of UPDATE/INSERT/DELETE statements.
+    """
+    with _db_lock:
+        conn = get_master_db()
+        cur = conn.cursor()
+        res = cur.execute(sql, params or [])
+        return res.rowcount if hasattr(res, 'rowcount') else 1
 
 def init_db(conn, force_reload: bool = False):
     """
     Load all 6 CSV files into DuckDB in-memory database tables.
-    If force_reload is True, re-creates tables from raw CSV files.
     """
     tables = [
         "customers",
@@ -73,5 +106,5 @@ def reset_db():
         return True
 
 if __name__ == "__main__":
-    conn = get_db()
-    print("Thread-safe in-memory DuckDB initialized successfully.")
+    res = fetch_one_dict("SELECT * FROM customers LIMIT 1")
+    print("Thread-safe dictionary DuckDB test passed:", res["name_1"])

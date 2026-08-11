@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any
-from db import get_db
+from db import fetch_all_dict, fetch_one_dict
 from schemas import (
     CustomerProfile, AccountItem, LoanItem, TransactionItem,
     LoanApplicationItem, LimitCollateralItem, Customer360Response,
@@ -30,7 +30,6 @@ def safe_int(val: Any, default: int = 0) -> int:
 class CustomerService:
     @staticmethod
     def list_customers(query: Optional[str] = None, limit: int = 50) -> List[CustomerBasicInfo]:
-        conn = get_db()
         sql = "SELECT customer_id, name_1, kyc_status, monthly_income, employment_type FROM customers"
         params = []
         
@@ -42,161 +41,155 @@ class CustomerService:
         sql += " ORDER BY customer_id ASC LIMIT ?"
         params.append(limit)
         
-        rows = conn.execute(sql, params).fetchall()
+        rows = fetch_all_dict(sql, params)
         result = []
         for r in rows:
             result.append(CustomerBasicInfo(
-                customer_id=safe_int(r[0]),
-                name_1=str(r[1] or "Unknown"),
-                kyc_status=str(r[2]) if r[2] else "UNKNOWN",
-                monthly_income=safe_float(r[3]),
-                employment_type=str(r[4]) if r[4] else None
+                customer_id=safe_int(r.get("customer_id")),
+                name_1=str(r.get("name_1") or "Unknown"),
+                kyc_status=str(r.get("kyc_status")) if r.get("kyc_status") else "UNKNOWN",
+                monthly_income=safe_float(r.get("monthly_income")),
+                employment_type=str(r.get("employment_type")) if r.get("employment_type") else None
             ))
         return result
 
     @staticmethod
     def get_customer_profile(customer_id: int) -> Optional[CustomerProfile]:
-        conn = get_db()
-        row = conn.execute(
+        row = fetch_one_dict(
             "SELECT customer_id, mnemonic, short_name, name_1, street, town_country, nationality, residence, sector, account_officer, date_of_birth, customer_status, kyc_status, monthly_income, employment_type FROM customers WHERE customer_id = ?",
             [customer_id]
-        ).fetchone()
+        )
         
         if not row:
             return None
             
         return CustomerProfile(
-            customer_id=safe_int(row[0]),
-            mnemonic=str(row[1]) if row[1] else None,
-            short_name=str(row[2]) if row[2] else None,
-            name_1=str(row[3] or "Unknown"),
-            street=str(row[4]) if row[4] else None,
-            town_country=str(row[5]) if row[5] else None,
-            nationality=str(row[6]) if row[6] else None,
-            residence=str(row[7]) if row[7] else None,
-            sector=safe_int(row[8]) if row[8] is not None else None,
-            account_officer=safe_int(row[9]) if row[9] is not None else None,
-            date_of_birth=str(row[10]) if row[10] else None,
-            customer_status=safe_int(row[11]) if row[11] is not None else None,
-            kyc_status=str(row[12]) if row[12] else "UNKNOWN",
-            monthly_income=safe_float(row[13]),
-            employment_type=str(row[14]) if row[14] else None
+            customer_id=safe_int(row.get("customer_id")),
+            mnemonic=str(row.get("mnemonic")) if row.get("mnemonic") else None,
+            short_name=str(row.get("short_name")) if row.get("short_name") else None,
+            name_1=str(row.get("name_1") or "Unknown"),
+            street=str(row.get("street")) if row.get("street") else None,
+            town_country=str(row.get("town_country")) if row.get("town_country") else None,
+            nationality=str(row.get("nationality")) if row.get("nationality") else None,
+            residence=str(row.get("residence")) if row.get("residence") else None,
+            sector=safe_int(row.get("sector")) if row.get("sector") is not None else None,
+            account_officer=safe_int(row.get("account_officer")) if row.get("account_officer") is not None else None,
+            date_of_birth=str(row.get("date_of_birth")) if row.get("date_of_birth") else None,
+            customer_status=safe_int(row.get("customer_status")) if row.get("customer_status") is not None else None,
+            kyc_status=str(row.get("kyc_status")) if row.get("kyc_status") else "UNKNOWN",
+            monthly_income=safe_float(row.get("monthly_income")),
+            employment_type=str(row.get("employment_type")) if row.get("employment_type") else None
         )
 
     @staticmethod
     def get_accounts(customer_id: int) -> List[AccountItem]:
-        conn = get_db()
-        rows = conn.execute(
+        rows = fetch_all_dict(
             "SELECT account_id, customer_id, category, currency, account_title, opening_date, working_balance, posting_restrict, product FROM accounts WHERE customer_id = ? ORDER BY account_id",
             [customer_id]
-        ).fetchall()
+        )
         
         return [
             AccountItem(
-                account_id=safe_int(r[0]),
-                customer_id=safe_int(r[1]),
-                category=safe_int(r[2]),
-                currency=str(r[3]) if r[3] else "INR",
-                account_title=str(r[4]) if r[4] else "",
-                opening_date=str(r[5]) if r[5] else None,
-                working_balance=safe_float(r[6]),
-                posting_restrict=str(r[7]) if r[7] else None,
-                product=str(r[8]) if r[8] else None
+                account_id=safe_int(r.get("account_id")),
+                customer_id=safe_int(r.get("customer_id")),
+                category=safe_int(r.get("category")),
+                currency=str(r.get("currency")) if r.get("currency") else "INR",
+                account_title=str(r.get("account_title")) if r.get("account_title") else "",
+                opening_date=str(r.get("opening_date")) if r.get("opening_date") else None,
+                working_balance=safe_float(r.get("working_balance")),
+                posting_restrict=str(r.get("posting_restrict")) if r.get("posting_restrict") else None,
+                product=str(r.get("product")) if r.get("product") else None
             ) for r in rows
         ]
 
     @staticmethod
     def get_loans(customer_id: int) -> List[LoanItem]:
-        conn = get_db()
-        rows = conn.execute(
+        rows = fetch_all_dict(
             "SELECT loan_id, customer_id, product, currency, sanctioned_amount, outstanding, interest_rate, tenure_months, start_date, status, days_past_due, collateral_value, limit_amount FROM loans WHERE customer_id = ? ORDER BY loan_id",
             [customer_id]
-        ).fetchall()
+        )
         
         return [
             LoanItem(
-                loan_id=str(r[0]),
-                customer_id=safe_int(r[1]),
-                product=str(r[2]) if r[2] else "PERSONAL",
-                currency=str(r[3]) if r[3] else "INR",
-                sanctioned_amount=safe_float(r[4]),
-                outstanding=safe_float(r[5]),
-                interest_rate=safe_float(r[6]),
-                tenure_months=safe_int(r[7]),
-                start_date=str(r[8]) if r[8] else None,
-                status=str(r[9]) if r[9] else "CURRENT",
-                days_past_due=safe_int(r[10]),
-                collateral_value=safe_float(r[11]),
-                limit_amount=safe_float(r[12])
+                loan_id=str(r.get("loan_id")),
+                customer_id=safe_int(r.get("customer_id")),
+                product=str(r.get("product")) if r.get("product") else "PERSONAL",
+                currency=str(r.get("currency")) if r.get("currency") else "INR",
+                sanctioned_amount=safe_float(r.get("sanctioned_amount")),
+                outstanding=safe_float(r.get("outstanding")),
+                interest_rate=safe_float(r.get("interest_rate")),
+                tenure_months=safe_int(r.get("tenure_months")),
+                start_date=str(r.get("start_date")) if r.get("start_date") else None,
+                status=str(r.get("status")) if r.get("status") else "CURRENT",
+                days_past_due=safe_int(r.get("days_past_due")),
+                collateral_value=safe_float(r.get("collateral_value")),
+                limit_amount=safe_float(r.get("limit_amount"))
             ) for r in rows
         ]
 
     @staticmethod
     def get_transactions(customer_id: int) -> List[TransactionItem]:
-        conn = get_db()
-        rows = conn.execute(
+        rows = fetch_all_dict(
             "SELECT txn_id, account_id, customer_id, txn_date, value_date, amount, txn_type, counterparty, narrative, channel, is_suspicious FROM transactions WHERE customer_id = ? ORDER BY txn_date DESC, txn_id DESC",
             [customer_id]
-        ).fetchall()
+        )
         
         return [
             TransactionItem(
-                txn_id=str(r[0]),
-                account_id=safe_int(r[1]),
-                customer_id=safe_int(r[2]),
-                txn_date=str(r[3]),
-                value_date=str(r[4]) if r[4] else None,
-                amount=safe_float(r[5]),
-                txn_type=str(r[6]) if r[6] else "DEBIT",
-                counterparty=str(r[7]) if r[7] else None,
-                narrative=str(r[8]) if r[8] else None,
-                channel=str(r[9]) if r[9] else None,
-                is_suspicious=str(r[10]) if r[10] else "N"
+                txn_id=str(r.get("txn_id")),
+                account_id=safe_int(r.get("account_id")),
+                customer_id=safe_int(r.get("customer_id")),
+                txn_date=str(r.get("txn_date")),
+                value_date=str(r.get("value_date")) if r.get("value_date") else None,
+                amount=safe_float(r.get("amount")),
+                txn_type=str(r.get("txn_type")) if r.get("txn_type") else "DEBIT",
+                counterparty=str(r.get("counterparty")) if r.get("counterparty") else None,
+                narrative=str(r.get("narrative")) if r.get("narrative") else None,
+                channel=str(r.get("channel")) if r.get("channel") else None,
+                is_suspicious=str(r.get("is_suspicious")) if r.get("is_suspicious") else "N"
             ) for r in rows
         ]
 
     @staticmethod
     def get_applications(customer_id: int) -> List[LoanApplicationItem]:
-        conn = get_db()
-        rows = conn.execute(
+        rows = fetch_all_dict(
             "SELECT application_id, customer_id, product, requested_amount, tenure_months, existing_emi, credit_score, purpose, decision_label FROM loan_applications WHERE customer_id = ? ORDER BY application_id",
             [customer_id]
-        ).fetchall()
+        )
         
         return [
             LoanApplicationItem(
-                application_id=str(r[0]),
-                customer_id=safe_int(r[1]),
-                product=str(r[2]) if r[2] else "PERSONAL",
-                requested_amount=safe_float(r[3]),
-                tenure_months=safe_int(r[4]),
-                existing_emi=safe_float(r[5]),
-                credit_score=safe_int(r[6]),
-                purpose=str(r[7]) if r[7] else None,
-                decision_label=str(r[8]) if r[8] else "REFER"
+                application_id=str(r.get("application_id")),
+                customer_id=safe_int(r.get("customer_id")),
+                product=str(r.get("product")) if r.get("product") else "PERSONAL",
+                requested_amount=safe_float(r.get("requested_amount")),
+                tenure_months=safe_int(r.get("tenure_months")),
+                existing_emi=safe_float(r.get("existing_emi")),
+                credit_score=safe_int(r.get("credit_score")),
+                purpose=str(r.get("purpose")) if r.get("purpose") else None,
+                decision_label=str(r.get("decision_label")) if r.get("decision_label") else "REFER"
             ) for r in rows
         ]
 
     @staticmethod
     def get_limits(customer_id: int) -> List[LimitCollateralItem]:
-        conn = get_db()
-        rows = conn.execute(
+        rows = fetch_all_dict(
             "SELECT customer_id, limit_id, limit_product, currency, approved_limit, utilized, available, collateral_id, collateral_type, collateral_value FROM limits_collateral WHERE customer_id = ?",
             [customer_id]
-        ).fetchall()
+        )
         
         return [
             LimitCollateralItem(
-                customer_id=safe_int(r[0]),
-                limit_id=str(r[1]) if r[1] else None,
-                limit_product=str(r[2]) if r[2] else None,
-                currency=str(r[3]) if r[3] else "INR",
-                approved_limit=safe_float(r[4]),
-                utilized=safe_float(r[5]),
-                available=safe_float(r[6]),
-                collateral_id=str(r[7]) if r[7] else None,
-                collateral_type=str(r[8]) if r[8] else None,
-                collateral_value=safe_float(r[9])
+                customer_id=safe_int(r.get("customer_id")),
+                limit_id=str(r.get("limit_id")) if r.get("limit_id") else None,
+                limit_product=str(r.get("limit_product")) if r.get("limit_product") else None,
+                currency=str(r.get("currency")) if r.get("currency") else "INR",
+                approved_limit=safe_float(r.get("approved_limit")),
+                utilized=safe_float(r.get("utilized")),
+                available=safe_float(r.get("available")),
+                collateral_id=str(r.get("collateral_id")) if r.get("collateral_id") else None,
+                collateral_type=str(r.get("collateral_type")) if r.get("collateral_type") else None,
+                collateral_value=safe_float(r.get("collateral_value"))
             ) for r in rows
         ]
 
