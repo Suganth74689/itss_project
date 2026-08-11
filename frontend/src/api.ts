@@ -3,8 +3,8 @@ import type { CustomerBasicInfo, Customer360Response, KycAssessmentResponse, Kyc
 const API_BASE = '/api';
 
 export async function fetchCustomers(query?: string): Promise<CustomerBasicInfo[]> {
-  const url = query 
-    ? `${API_BASE}/customers?query=${encodeURIComponent(query)}`
+  const url = query && query.trim() ? 
+    `${API_BASE}/customers?query=${encodeURIComponent(query.trim())}`
     : `${API_BASE}/customers`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch customers list');
@@ -12,19 +12,37 @@ export async function fetchCustomers(query?: string): Promise<CustomerBasicInfo[
 }
 
 export async function fetchCustomer360(customerId: number): Promise<Customer360Response> {
-  const res = await fetch(`${API_BASE}/customers/${customerId}/360`);
-  if (!res.ok) throw new Error(`Failed to fetch Customer 360 profile for ID ${customerId}`);
+  const validId = Number(customerId);
+  if (!validId || isNaN(validId)) {
+    throw new Error(`Invalid Customer ID: ${customerId}`);
+  }
+  const res = await fetch(`${API_BASE}/customers/${validId}/360`);
+  if (!res.ok) {
+    if (res.status === 404) throw new Error(`Customer #${validId} not found in database`);
+    throw new Error(`Failed to fetch Customer 360 profile for ID ${validId}`);
+  }
   return res.json();
 }
 
 export async function fetchCustomerKyc(customerId: number): Promise<KycAssessmentResponse> {
-  const res = await fetch(`${API_BASE}/customers/${customerId}/kyc`);
-  if (!res.ok) throw new Error(`Failed to fetch KYC Assessment for Customer ID ${customerId}`);
+  const validId = Number(customerId);
+  if (!validId || isNaN(validId)) {
+    throw new Error(`Invalid Customer ID: ${customerId}`);
+  }
+  const res = await fetch(`${API_BASE}/customers/${validId}/kyc`);
+  if (!res.ok) {
+    if (res.status === 404) throw new Error(`KYC assessment not found for Customer #${validId}`);
+    throw new Error(`Failed to fetch KYC Assessment for Customer ID ${validId}`);
+  }
   return res.json();
 }
 
 export async function verifyCustomerKycDocument(customerId: number, req: KycVerifyDocumentRequest): Promise<KycVerifyDocumentResponse> {
-  const res = await fetch(`${API_BASE}/customers/${customerId}/kyc/verify`, {
+  const validId = Number(customerId);
+  if (!validId || isNaN(validId)) {
+    throw new Error(`Invalid Customer ID: ${customerId}`);
+  }
+  const res = await fetch(`${API_BASE}/customers/${validId}/kyc/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req)
