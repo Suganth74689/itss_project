@@ -54,6 +54,8 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
     { label: '🛑 Guardrail: Who is the prime minister?', query: 'Who is the prime minister of India?', type: 'guardrail' },
   ];
 
+  const answerText = queryResult?.answer || queryResult?.matched_faq?.answer || '';
+
   return (
     <div className="space-y-6">
       {/* 1. Header Banner */}
@@ -176,9 +178,9 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
                 </span>
               </div>
 
-              {/* Answer Content */}
+              {/* Answer Content - Guaranteed Fallback to matched_faq.answer */}
               <div className="p-4 rounded-xl bg-gray-900/80 border border-gray-800 text-gray-100 text-xs font-mono leading-relaxed whitespace-pre-line">
-                {queryResult.answer}
+                {answerText || 'No answer text returned.'}
               </div>
 
               {/* Grounding Evidence Citations */}
