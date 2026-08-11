@@ -163,7 +163,7 @@ export interface KycVerifyDocumentResponse {
   updated_assessment: KycAssessmentResponse;
 }
 
-// --- B3 FAQ TYPES ---
+// --- B3 FAQ & RAG CHAT TYPES ---
 
 export interface FaqItem {
   id: string;
@@ -176,11 +176,16 @@ export interface FaqItem {
 
 export interface FaqQueryRequest {
   question: string;
+  customer_id?: number;
 }
 
 export interface FaqQueryResponse {
   status: string; // MATCHED / REFUSED
+  query_type?: string; // CUSTOMER_SPECIFIC / BANKING_FAQ / REFUSED
   user_question: string;
+  customer_id?: number;
+  customer_name?: string;
+  answer?: string;
   matched_faq?: FaqItem;
   confidence_score: string; // HIGH / MEDIUM / REFUSED
   similarity_score: number;

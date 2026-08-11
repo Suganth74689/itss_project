@@ -152,7 +152,7 @@ class KycVerifyDocumentResponse(BaseModel):
     message: str
     updated_assessment: KycAssessmentResponse
 
-# --- B3 FAQ SCHEMAS ---
+# --- B3 FAQ & RAG CHAT SCHEMAS ---
 
 class FaqItem(BaseModel):
     id: str
@@ -164,10 +164,15 @@ class FaqItem(BaseModel):
 
 class FaqQueryRequest(BaseModel):
     question: str
+    customer_id: Optional[int] = None
 
 class FaqQueryResponse(BaseModel):
     status: str  # MATCHED / REFUSED
+    query_type: Optional[str] = "BANKING_FAQ"  # CUSTOMER_SPECIFIC / BANKING_FAQ / REFUSED
     user_question: str
+    customer_id: Optional[int] = None
+    customer_name: Optional[str] = None
+    answer: Optional[str] = None
     matched_faq: Optional[FaqItem] = None
     confidence_score: str  # HIGH / MEDIUM / REFUSED
     similarity_score: float

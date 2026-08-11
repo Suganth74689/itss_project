@@ -76,11 +76,11 @@ export async function resetDatabase(): Promise<void> {
   if (!res.ok) throw new Error('Failed to reset DuckDB database');
 }
 
-export async function queryFaq(question: string): Promise<FaqQueryResponse> {
+export async function queryFaq(question: string, customerId?: number): Promise<FaqQueryResponse> {
   const res = await fetch(`${API_BASE}/faq/query`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question })
+    body: JSON.stringify({ question, customer_id: customerId || undefined })
   });
   if (!res.ok) throw new Error('Failed to process FAQ query');
   return res.json();

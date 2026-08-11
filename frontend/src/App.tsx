@@ -152,7 +152,10 @@ export function App() {
                 />
               )}
               {activeModule === 'b3-faq' && (
-                <FAQAssistant onOpenEvidence={() => setShowEvidence(true)} />
+                <FAQAssistant
+                  selectedCustomerId={selectedCustomerId}
+                  onOpenEvidence={() => setShowEvidence(true)}
+                />
               )}
               {activeModule === 'b4-lookalike' && (
                 <LookalikeExplainer
