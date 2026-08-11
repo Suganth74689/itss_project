@@ -1,5 +1,6 @@
 import os
 import duckdb
+import threading
 from pathlib import Path
 
 # Path to dataset directory
@@ -7,15 +8,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATASET_DIR = BASE_DIR / "dataset"
 DATA_DIR = BASE_DIR / "data"
 
-_conn = None
+_master_conn = None
+_db_lock = threading.Lock()
+
+def get_master_db():
+    global _master_conn
+    with _db_lock:
+        if _master_conn is None:
+            # In-memory DuckDB connection
+            _master_conn = duckdb.connect(database=":memory:", read_only=False)
+            init_db(_master_conn)
+        return _master_conn
 
 def get_db():
-    global _conn
-    if _conn is None:
-        # In-memory DuckDB connection for zero file lock conflicts and maximum speed
-        _conn = duckdb.connect(database=":memory:", read_only=False)
-        init_db(_conn)
-    return _conn
+    """
+    Returns a thread-safe cursor from the master DuckDB connection.
+    This guarantees concurrent HTTP requests in FastAPI threadpool never collide.
+    """
+    master = get_master_db()
+    with _db_lock:
+        return master.cursor()
 
 def init_db(conn, force_reload: bool = False):
     """
@@ -32,7 +44,6 @@ def init_db(conn, force_reload: bool = False):
     ]
     
     for table in tables:
-        # Check if table already exists
         table_exists = False
         if not force_reload:
             try:
@@ -54,12 +65,13 @@ def init_db(conn, force_reload: bool = False):
 
 def reset_db():
     """
-    Force reload all tables from raw CSV files.
+    Force reload all tables from raw CSV files safely under lock.
     """
-    conn = get_db()
-    init_db(conn, force_reload=True)
-    return True
+    with _db_lock:
+        master = get_master_db()
+        init_db(master, force_reload=True)
+        return True
 
 if __name__ == "__main__":
     conn = get_db()
-    print("In-memory DuckDB initialized successfully.")
+    print("Thread-safe in-memory DuckDB initialized successfully.")
