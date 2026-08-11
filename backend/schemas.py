@@ -165,6 +165,7 @@ class FaqItem(BaseModel):
 class FaqQueryRequest(BaseModel):
     question: str
     customer_id: Optional[int] = None
+    preferred_model: Optional[str] = None  # e.g. "llama3", "mistral", "gemma", "tinyllama"
 
 class FaqQueryResponse(BaseModel):
     status: str  # MATCHED / REFUSED
@@ -180,6 +181,17 @@ class FaqQueryResponse(BaseModel):
     refusal_reason: Optional[str] = None
     suggested_related_faqs: List[FaqItem] = []
     citations: List[CitationEvidence] = []
+    
+    llm_provider: Optional[str] = "DuckDB-RAG"  # "Ollama (llama3)" / "DuckDB-RAG"
+    ollama_available: bool = False
+    ollama_model: Optional[str] = None
+
+class OllamaStatusResponse(BaseModel):
+    available: bool
+    url: str
+    active_models: List[str]
+    default_model: Optional[str] = None
+    message: str
 
 # --- B4 LOOKALIKE SCHEMAS ---
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { HelpCircle, Search, Sparkles, AlertOctagon, CheckCircle2, FileText, ArrowRight, ShieldAlert, User } from 'lucide-react';
-import type { FaqQueryResponse, FaqItem } from '../types';
-import { queryFaq, fetchFaqs } from '../api';
+import { HelpCircle, Search, AlertOctagon, CheckCircle2, FileText, ArrowRight, ShieldAlert, User, Cpu, Zap } from 'lucide-react';
+import type { FaqQueryResponse, FaqItem, OllamaStatusResponse } from '../types';
+import { queryFaq, fetchFaqs, fetchOllamaStatus } from '../api';
 
 interface FAQAssistantProps {
   selectedCustomerId?: number | null;
@@ -13,10 +13,12 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
   const [loading, setLoading] = useState<boolean>(false);
   const [queryResult, setQueryResult] = useState<FaqQueryResponse | null>(null);
   const [faqsList, setFaqsList] = useState<FaqItem[]>([]);
+  const [ollamaStatus, setOllamaStatus] = useState<OllamaStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadFaqsList();
+    loadOllamaStatus();
   }, []);
 
   async function loadFaqsList() {
@@ -25,6 +27,15 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
       setFaqsList(data);
     } catch (err) {
       console.error('Failed to load FAQs list');
+    }
+  }
+
+  async function loadOllamaStatus() {
+    try {
+      const st = await fetchOllamaStatus();
+      setOllamaStatus(st);
+    } catch (err) {
+      console.error('Failed to fetch Ollama status');
     }
   }
 
@@ -38,6 +49,8 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
       const res = await queryFaq(targetQ.trim(), selectedCustomerId || undefined);
       setQueryResult(res);
       setQuestion(targetQ);
+      // Refresh Ollama status
+      loadOllamaStatus();
     } catch (err: any) {
       setError(err.message || 'Failed to process RAG query.');
     } finally {
@@ -67,13 +80,23 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-2xl font-bold text-white tracking-tight">Bank FAQ & Customer RAG Assistant</h2>
-                <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> RAG Knowledge Engine
-                </span>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Bank FAQ & Ollama RAG Assistant</h2>
+                
+                {/* Live Ollama / DuckDB Status Badge */}
+                {ollamaStatus?.available ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+                    <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                    Ollama Active ({ollamaStatus.default_model || 'llama3'})
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-purple-400" />
+                    DuckDB RAG Active (Ollama Offline)
+                  </span>
+                )}
               </div>
               <p className="text-xs text-gray-400 mt-1 font-mono">
-                Context-Aware Customer 360 RAG & Restricted Policy Knowledge Base • Out-of-Scope Refusal Guardrails
+                Context-Aware Customer 360 RAG & Restricted Policy Knowledge Base • Ollama Local LLM Generative RAG
               </p>
             </div>
           </div>
@@ -164,9 +187,16 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
                     <h3 className="text-base font-bold text-white">
                       {queryResult.matched_faq?.question || (queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Customer 360 RAG Response (${queryResult.customer_name || 'Selected Customer'})` : queryResult.user_question)}
                     </h3>
-                    <p className="text-xs text-gray-400 font-mono">
-                      {queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Live DuckDB Core Banking Retrieval` : `Banking Policy Knowledge Engine`}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-gray-400 font-mono">
+                        {queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Live DuckDB Core Banking Retrieval` : `Banking Policy Knowledge Engine`}
+                      </span>
+                      {queryResult.llm_provider && (
+                        <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono font-bold">
+                          {queryResult.llm_provider}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${

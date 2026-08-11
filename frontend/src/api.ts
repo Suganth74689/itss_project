@@ -1,7 +1,7 @@
 import type {
   CustomerBasicInfo, Customer360Response, KycAssessmentResponse,
   KycVerifyDocumentRequest, KycVerifyDocumentResponse, FaqQueryResponse,
-  FaqItem, LookalikeResponse
+  FaqItem, LookalikeResponse, OllamaStatusResponse
 } from './types';
 
 const API_BASE = '/api';
@@ -76,11 +76,11 @@ export async function resetDatabase(): Promise<void> {
   if (!res.ok) throw new Error('Failed to reset DuckDB database');
 }
 
-export async function queryFaq(question: string, customerId?: number): Promise<FaqQueryResponse> {
+export async function queryFaq(question: string, customerId?: number, preferredModel?: string): Promise<FaqQueryResponse> {
   const res = await fetch(`${API_BASE}/faq/query`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, customer_id: customerId || undefined })
+    body: JSON.stringify({ question, customer_id: customerId || undefined, preferred_model: preferredModel || undefined })
   });
   if (!res.ok) throw new Error('Failed to process FAQ query');
   return res.json();
@@ -89,5 +89,11 @@ export async function queryFaq(question: string, customerId?: number): Promise<F
 export async function fetchFaqs(): Promise<FaqItem[]> {
   const res = await fetch(`${API_BASE}/faq/list`);
   if (!res.ok) throw new Error('Failed to fetch FAQs list');
+  return res.json();
+}
+
+export async function fetchOllamaStatus(): Promise<OllamaStatusResponse> {
+  const res = await fetch(`${API_BASE}/faq/ollama-status`);
+  if (!res.ok) throw new Error('Failed to fetch Ollama status');
   return res.json();
 }

@@ -141,7 +141,7 @@ export interface KycCategorySummary {
 export interface KycAssessmentResponse {
   customer_id: number;
   name_1: string;
-  overall_status: string; // COMPLETE / PENDING / EXPIRED
+  overall_status: string;
   completeness_percentage: number;
   categories: KycCategorySummary[];
   fields: KycFieldItem[];
@@ -177,22 +177,35 @@ export interface FaqItem {
 export interface FaqQueryRequest {
   question: string;
   customer_id?: number;
+  preferred_model?: string;
 }
 
 export interface FaqQueryResponse {
-  status: string; // MATCHED / REFUSED
-  query_type?: string; // CUSTOMER_SPECIFIC / BANKING_FAQ / REFUSED
+  status: string;
+  query_type?: string;
   user_question: string;
   customer_id?: number;
   customer_name?: string;
   answer?: string;
   matched_faq?: FaqItem;
-  confidence_score: string; // HIGH / MEDIUM / REFUSED
+  confidence_score: string;
   similarity_score: number;
   explanation: string;
   refusal_reason?: string;
   suggested_related_faqs: FaqItem[];
   citations: CitationEvidence[];
+  
+  llm_provider?: string;
+  ollama_available?: boolean;
+  ollama_model?: string;
+}
+
+export interface OllamaStatusResponse {
+  available: boolean;
+  url: string;
+  active_models: string[];
+  default_model?: string;
+  message: string;
 }
 
 // --- B4 LOOKALIKE TYPES ---

@@ -1,16 +1,20 @@
 import json
 import re
+import urllib.request
+import urllib.error
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from schemas import (
-    FaqItem, FaqQueryRequest, FaqQueryResponse, CitationEvidence
+    FaqItem, FaqQueryRequest, FaqQueryResponse, CitationEvidence, OllamaStatusResponse
 )
 from services.customer_service import CustomerService
 from services.kyc_service import KycService
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FAQS_PATH = BASE_DIR / "data" / "faqs.json"
+
+OLLAMA_API_BASE = "http://127.0.0.1:11434"
 
 NON_BANKING_TRIGGERS = [
     "prime minister", "president", "python", "java", "c++", "script",
@@ -47,10 +51,83 @@ class FaqService:
         return cls.load_faqs()
 
     @classmethod
+    def check_ollama_status(cls) -> OllamaStatusResponse:
+        """
+        Check if local Ollama daemon is active on 127.0.0.1:11434.
+        Returns installed local models list and connection status.
+        """
+        try:
+            req = urllib.request.Request(f"{OLLAMA_API_BASE}/api/tags", headers={"User-Agent": "FastAPI-Backend"})
+            with urllib.request.urlopen(req, timeout=1.2) as response:
+                if response.status == 200:
+                    data = json.loads(response.read().decode('utf-8'))
+                    models = [m.get("name") for m in data.get("models", [])]
+                    default_m = models[0] if models else "llama3"
+                    return OllamaStatusResponse(
+                        available=True,
+                        url=OLLAMA_API_BASE,
+                        active_models=models,
+                        default_model=default_m,
+                        message=f"Ollama Local LLM server active on port 11434 ({len(models)} local model(s) available)."
+                    )
+        except Exception:
+            pass
+
+        return OllamaStatusResponse(
+            available=False,
+            url=OLLAMA_API_BASE,
+            active_models=[],
+            default_model=None,
+            message="Ollama server offline on 127.0.0.1:11434. Seamless fallback active using DuckDB RAG Engine."
+        )
+
+    @classmethod
+    def generate_ollama_completion(cls, user_question: str, context_facts: str, model_name: str = "llama3") -> Optional[str]:
+        """
+        Synthesize natural generative RAG response via local Ollama LLM.
+        Grounded strictly in DuckDB banking context.
+        """
+        prompt = (
+            f"You are an AI Banking Intelligence Assistant. Answer the user's question using ONLY the provided verified banking context.\n"
+            f"Context Data:\n{context_facts}\n\n"
+            f"User Question: {user_question}\n\n"
+            f"Instructions:\n"
+            f"1. Be professional, clear, and concise.\n"
+            f"2. Cite key figures (balances, interest rates, DPD overdue days, KYC status).\n"
+            f"3. Do not invent facts outside the provided context."
+        )
+
+        payload = {
+            "model": model_name,
+            "prompt": prompt,
+            "stream": False
+        }
+
+        try:
+            json_data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(
+                f"{OLLAMA_API_BASE}/api/generate",
+                data=json_data,
+                headers={"Content-Type": "application/json", "User-Agent": "FastAPI-Backend"}
+            )
+            with urllib.request.urlopen(req, timeout=12.0) as response:
+                if response.status == 200:
+                    res_body = json.loads(response.read().decode('utf-8'))
+                    return res_body.get("response", "").strip()
+        except Exception:
+            return None
+        return None
+
+    @classmethod
     def answer_faq(cls, req: FaqQueryRequest) -> FaqQueryResponse:
         faqs = cls.load_faqs()
         q_raw = req.question.strip()
         q_lower = q_raw.lower()
+
+        # Check Ollama status
+        ollama_status = cls.check_ollama_status()
+        ollama_avail = ollama_status.available
+        target_model = req.preferred_model or ollama_status.default_model or "llama3"
 
         # 1. STRICT OUT-OF-SCOPE GUARDRAIL CHECK
         for trigger in NON_BANKING_TRIGGERS:
@@ -66,7 +143,10 @@ class FaqService:
                     explanation=f"Out-of-scope query detected matching prohibited trigger '{trigger}'.",
                     refusal_reason="This assistant is strictly restricted to banking policies, customer account 360 data, KYC compliance, and loan inquiries. Non-banking topics (sports, entertainment, coding, politics) are strictly prohibited.",
                     suggested_related_faqs=faqs[:2],
-                    citations=[]
+                    citations=[],
+                    llm_provider="Refusal Guardrail",
+                    ollama_available=ollama_avail,
+                    ollama_model=target_model if ollama_avail else None
                 )
 
         # 2. GREETING & GENERAL ASSISTANCE HELP INTENT
@@ -100,7 +180,10 @@ class FaqService:
                 similarity_score=1.0,
                 explanation="Assistant greeting and capabilities guide.",
                 suggested_related_faqs=faqs[:3],
-                citations=[]
+                citations=[],
+                llm_provider="Ollama Assistant" if ollama_avail else "DuckDB-RAG Engine",
+                ollama_available=ollama_avail,
+                ollama_model=target_model if ollama_avail else None
             )
 
         # 3. CHECK CUSTOMER-SPECIFIC RAG INTENT
@@ -139,14 +222,13 @@ class FaqService:
                 if "limit" in q_lower or "credit" in q_lower:
                     ans_parts.append(f"• Credit Limits: ₹{c360.total_approved_limit:,.2f} approved limit (Available: ₹{c360.total_available_limit:,.2f}).")
 
-                # Default general profile summary if generic query
                 if len(ans_parts) == 1:
                     ans_parts.append(f"• Working Balance: ₹{c360.total_working_balance:,.2f}")
                     ans_parts.append(f"• KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified)")
                     ans_parts.append(f"• Outstanding Loans: ₹{c360.total_outstanding_loan:,.2f} (Max DPD: {c360.max_days_past_due} Days)")
                     ans_parts.append(f"• Monthly Income: ₹{c.monthly_income:,.2f} ({c.employment_type})")
 
-                customer_answer = "\n".join(ans_parts)
+                deterministic_ans = "\n".join(ans_parts)
 
                 rag_citations = [
                     CitationEvidence(
@@ -172,19 +254,31 @@ class FaqService:
                     )
                 ]
 
+                # Synthesize with Ollama if available
+                final_ans = deterministic_ans
+                provider = "DuckDB-RAG Engine"
+                if ollama_avail:
+                    ollama_gen = cls.generate_ollama_completion(q_raw, deterministic_ans, target_model)
+                    if ollama_gen:
+                        final_ans = ollama_gen
+                        provider = f"Ollama Local LLM ({target_model})"
+
                 return FaqQueryResponse(
                     status="MATCHED",
                     query_type="CUSTOMER_SPECIFIC",
                     user_question=q_raw,
                     customer_id=c.customer_id,
                     customer_name=c.name_1,
-                    answer=customer_answer,
+                    answer=final_ans,
                     matched_faq=None,
                     confidence_score="HIGH",
                     similarity_score=0.98,
-                    explanation=f"Customer 360 RAG Pipeline successfully retrieved live account facts for {c.name_1} (ID #{c.customer_id}) from DuckDB.",
+                    explanation=f"Retrieved Customer 360 facts for {c.name_1} (ID #{c.customer_id}) from DuckDB; synthesized via {provider}.",
                     suggested_related_faqs=faqs[:2],
-                    citations=rag_citations
+                    citations=rag_citations,
+                    llm_provider=provider,
+                    ollama_available=ollama_avail,
+                    ollama_model=target_model if ollama_avail else None
                 )
 
         # 4. GENERAL BANKING POLICY RAG SEARCH
@@ -208,21 +302,29 @@ class FaqService:
                 highest_score = score
                 best_faq = faq
 
-        # Confidence Threshold (lowered to 0.10 for maximum responsiveness)
         if highest_score >= 0.10 and best_faq:
             confidence = "HIGH" if highest_score >= 0.35 else "MEDIUM"
             related = [f for f in faqs if f.id in best_faq.related_faqs or (f.category == best_faq.category and f.id != best_faq.id)]
             
+            final_ans = best_faq.answer
+            provider = "DuckDB Policy RAG"
+            if ollama_avail:
+                context_str = f"Official Bank Policy FAQ ({best_faq.category}): {best_faq.question}\nOfficial Answer: {best_faq.answer}"
+                ollama_gen = cls.generate_ollama_completion(q_raw, context_str, target_model)
+                if ollama_gen:
+                    final_ans = ollama_gen
+                    provider = f"Ollama Local LLM ({target_model})"
+
             return FaqQueryResponse(
                 status="MATCHED",
                 query_type="BANKING_FAQ",
                 user_question=q_raw,
                 customer_id=req.customer_id,
-                answer=best_faq.answer,
+                answer=final_ans,
                 matched_faq=best_faq,
                 confidence_score=confidence,
                 similarity_score=round(min(highest_score, 1.0), 3),
-                explanation=f"Matched Banking Policy FAQ '{best_faq.question}' under category '{best_faq.category}' with {confidence} confidence.",
+                explanation=f"Matched Banking Policy FAQ '{best_faq.question}' ({best_faq.category}) with {confidence} confidence.",
                 suggested_related_faqs=related[:3],
                 citations=[
                     CitationEvidence(
@@ -232,7 +334,10 @@ class FaqService:
                         value=best_faq.question,
                         description=f"Matched Banking Knowledge Base record ({best_faq.category})"
                     )
-                ]
+                ],
+                llm_provider=provider,
+                ollama_available=ollama_avail,
+                ollama_model=target_model if ollama_avail else None
             )
 
         # 5. REFUSAL FOR UNMATCHED OR UNCLEAR PROMPTS
@@ -247,5 +352,8 @@ class FaqService:
             explanation="The prompt could not be matched with high confidence to any verified banking policy or customer profile.",
             refusal_reason="I can only assist with verified banking policies (loans, credit cards, net banking) or your specific customer account 360 profile. Please rephrase your question or select a valid customer.",
             suggested_related_faqs=faqs[:3],
-            citations=[]
+            citations=[],
+            llm_provider="Refusal Guardrail",
+            ollama_available=ollama_avail,
+            ollama_model=target_model if ollama_avail else None
         )
