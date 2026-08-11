@@ -189,3 +189,30 @@ export interface FaqQueryResponse {
   suggested_related_faqs: FaqItem[];
   citations: CitationEvidence[];
 }
+
+// --- B4 LOOKALIKE TYPES ---
+
+export interface LookalikeMatchItem {
+  customer_id: number;
+  name_1: string;
+  similarity_score: number;
+  similarity_pct: number;
+  kyc_status: string;
+  monthly_income: number;
+  employment_type?: string;
+  total_working_balance: number;
+  total_outstanding_loan: number;
+  max_days_past_due: number;
+  credit_score: number;
+  suspicious_txn_count: number;
+  matching_features: string[];
+  risk_discrepancies: string[];
+  citations: CitationEvidence[];
+}
+
+export interface LookalikeResponse {
+  target_customer_id: number;
+  target_customer_name: string;
+  lookalikes: LookalikeMatchItem[];
+  citations: CitationEvidence[];
+}

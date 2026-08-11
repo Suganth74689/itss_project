@@ -175,3 +175,28 @@ class FaqQueryResponse(BaseModel):
     refusal_reason: Optional[str] = None
     suggested_related_faqs: List[FaqItem] = []
     citations: List[CitationEvidence] = []
+
+# --- B4 LOOKALIKE SCHEMAS ---
+
+class LookalikeMatchItem(BaseModel):
+    customer_id: int
+    name_1: str
+    similarity_score: float
+    similarity_pct: float
+    kyc_status: str
+    monthly_income: float
+    employment_type: Optional[str] = None
+    total_working_balance: float
+    total_outstanding_loan: float
+    max_days_past_due: int
+    credit_score: int
+    suspicious_txn_count: int
+    matching_features: List[str]
+    risk_discrepancies: List[str]
+    citations: List[CitationEvidence] = []
+
+class LookalikeResponse(BaseModel):
+    target_customer_id: int
+    target_customer_name: str
+    lookalikes: List[LookalikeMatchItem]
+    citations: List[CitationEvidence] = []

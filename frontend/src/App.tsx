@@ -4,7 +4,7 @@ import { Sidebar, type ModuleType } from './components/Sidebar';
 import { Customer360 } from './pages/Customer360';
 import { KYCAssistant } from './pages/KYCAssistant';
 import { FAQAssistant } from './pages/FAQAssistant';
-import { LookalikePreview } from './pages/LookalikePreview';
+import { LookalikeExplainer } from './pages/LookalikeExplainer';
 import { EvidenceDrawer } from './components/EvidenceDrawer';
 import { fetchCustomers, fetchCustomer360 } from './api';
 import type { CustomerBasicInfo, Customer360Response } from './types';
@@ -13,7 +13,7 @@ import { Loader2, AlertCircle, RefreshCw, Layers } from 'lucide-react';
 export function App() {
   const [activeModule, setActiveModule] = useState<ModuleType>('b1-customer360');
   const [customers, setCustomers] = useState<CustomerBasicInfo[]>([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(100100);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(100106);
   const [c360Data, setC360Data] = useState<Customer360Response | null>(null);
   
   const [loading360, setLoading360] = useState<boolean>(false);
@@ -66,7 +66,7 @@ export function App() {
     }
   };
 
-  const featuredCustomers = [100100, 100106, 100101, 100102, 100103];
+  const featuredCustomers = [100106, 100100, 100101, 100102, 100103];
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-gray-100 flex flex-col font-sans">
@@ -126,7 +126,7 @@ export function App() {
                 <span>{error}</span>
               </div>
               <button 
-                onClick={() => setSelectedCustomerId(selectedCustomerId || 100100)}
+                onClick={() => setSelectedCustomerId(selectedCustomerId || 100106)}
                 className="px-3 py-1 bg-rose-900/40 hover:bg-rose-900/60 text-xs text-white rounded-lg flex items-center gap-1 font-mono"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Retry
@@ -155,7 +155,14 @@ export function App() {
                 <FAQAssistant onOpenEvidence={() => setShowEvidence(true)} />
               )}
               {activeModule === 'b4-lookalike' && (
-                <LookalikePreview data={c360Data} />
+                <LookalikeExplainer
+                  customerId={selectedCustomerId}
+                  onOpenEvidence={() => setShowEvidence(true)}
+                  onSelectCustomer={(id) => {
+                    setSelectedCustomerId(id);
+                    setActiveModule('b1-customer360');
+                  }}
+                />
               )}
             </>
           )}

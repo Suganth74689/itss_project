@@ -6,17 +6,19 @@ from schemas import (
     CustomerBasicInfo, CustomerProfile, Customer360Response,
     AccountItem, LoanItem, TransactionItem, LoanApplicationItem, LimitCollateralItem,
     KycAssessmentResponse, KycVerifyDocumentRequest, KycVerifyDocumentResponse,
-    FaqItem, FaqQueryRequest, FaqQueryResponse
+    FaqItem, FaqQueryRequest, FaqQueryResponse,
+    LookalikeResponse
 )
 from services.customer_service import CustomerService
 from services.kyc_service import KycService
 from services.faq_service import FaqService
+from services.similarity_service import CustomerSimilarityService
 from db import get_db, reset_db
 
 app = FastAPI(
     title="Banking Intelligence Assistant API",
-    version="2.1.0",
-    description="Explainable Banking AI Backend with Persistent DuckDB Engine & Dynamic Document Verification."
+    version="3.0.0",
+    description="Explainable Banking AI Backend with Persistent DuckDB Engine, KYC Document Verification & B4 Lookalike Explainer."
 )
 
 # Enable CORS for local React development
@@ -40,7 +42,7 @@ def health_check():
     return {
         "status": "ok",
         "service": "Banking Intelligence Assistant API",
-        "phase": "Phase 2.1 (Dynamic DuckDB Persistence & KYC Document Verification)"
+        "phase": "100% Complete (B1 Customer 360, B2 KYC Verification, B3 FAQ Guardrails, B4 Lookalike Explainer)"
     }
 
 @app.post("/api/db/reset")
@@ -115,6 +117,15 @@ def query_faq(req: FaqQueryRequest):
     if not req.question or not req.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
     return FaqService.answer_faq(req)
+
+# --- B4: LOOKALIKE CUSTOMER EXPLAINER ENDPOINT ---
+
+@app.get("/api/customers/{customer_id}/lookalikes", response_model=LookalikeResponse)
+def get_customer_lookalikes(customer_id: int, top_n: int = Query(5, ge=1, le=20)):
+    res = CustomerSimilarityService.get_lookalikes(customer_id, top_n=top_n)
+    if not res:
+        raise HTTPException(status_code=404, detail=f"Customer ID {customer_id} not found")
+    return res
 
 if __name__ == "__main__":
     import uvicorn

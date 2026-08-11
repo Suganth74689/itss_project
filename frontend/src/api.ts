@@ -1,4 +1,8 @@
-import type { CustomerBasicInfo, Customer360Response, KycAssessmentResponse, KycVerifyDocumentRequest, KycVerifyDocumentResponse, FaqQueryResponse, FaqItem } from './types';
+import type {
+  CustomerBasicInfo, Customer360Response, KycAssessmentResponse,
+  KycVerifyDocumentRequest, KycVerifyDocumentResponse, FaqQueryResponse,
+  FaqItem, LookalikeResponse
+} from './types';
 
 const API_BASE = '/api';
 
@@ -50,6 +54,19 @@ export async function verifyCustomerKycDocument(customerId: number, req: KycVeri
   if (!res.ok) {
     const errData = await res.json().catch(() => ({ detail: 'Document verification failed' }));
     throw new Error(errData.detail || 'Document verification failed');
+  }
+  return res.json();
+}
+
+export async function fetchCustomerLookalikes(customerId: number, topN: number = 5): Promise<LookalikeResponse> {
+  const validId = Number(customerId);
+  if (!validId || isNaN(validId)) {
+    throw new Error(`Invalid Customer ID: ${customerId}`);
+  }
+  const res = await fetch(`${API_BASE}/customers/${validId}/lookalikes?top_n=${topN}`);
+  if (!res.ok) {
+    if (res.status === 404) throw new Error(`Lookalikes not found for Customer #${validId}`);
+    throw new Error(`Failed to fetch Lookalike Explainer data for Customer #${validId}`);
   }
   return res.json();
 }
