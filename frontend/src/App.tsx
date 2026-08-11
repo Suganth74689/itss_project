@@ -69,7 +69,7 @@ export function App() {
   const featuredCustomers = [100106, 100100, 100101, 100102, 100103];
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-gray-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans">
       {/* Top Header Navigation */}
       <Header
         customers={customers}
@@ -88,20 +88,20 @@ export function App() {
         {/* Dynamic Module Content View */}
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Quick Demo Customer Pills Bar */}
-          <div className="flex items-center justify-between bg-gray-900/60 border border-gray-800 p-3 rounded-xl">
-            <div className="flex items-center space-x-2 text-xs text-gray-400">
-              <Layers className="w-4 h-4 text-blue-400" />
-              <span className="font-semibold text-gray-300">Quick Interview Sample Customers:</span>
+          <div className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-2xl shadow-sm">
+            <div className="flex items-center space-x-2 text-xs text-slate-600 font-mono">
+              <Layers className="w-4 h-4 text-blue-600" />
+              <span className="font-bold text-slate-900">Quick Interview Sample Customers:</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {featuredCustomers.map((id) => (
                 <button
                   key={id}
                   onClick={() => setSelectedCustomerId(id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all border ${
                     selectedCustomerId === id
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/20'
+                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
                   }`}
                 >
                   Customer {id}
@@ -112,22 +112,22 @@ export function App() {
 
           {/* Loading Indicator */}
           {loading360 && (
-            <div className="glass-panel p-12 rounded-2xl flex flex-col items-center justify-center space-y-3">
-              <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-              <p className="text-sm text-gray-400 font-mono">Querying DuckDB database for Customer #{selectedCustomerId}...</p>
+            <div className="card-light p-12 rounded-2xl flex flex-col items-center justify-center space-y-3 shadow-sm">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <p className="text-sm text-slate-600 font-mono font-semibold">Querying DuckDB database for Customer #{selectedCustomerId}...</p>
             </div>
           )}
 
           {/* Error Notice */}
           {error && !loading360 && (
-            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-semibold flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-rose-400" />
+                <AlertCircle className="w-5 h-5 text-rose-600" />
                 <span>{error}</span>
               </div>
               <button 
                 onClick={() => setSelectedCustomerId(selectedCustomerId || 100106)}
-                className="px-3 py-1 bg-rose-900/40 hover:bg-rose-900/60 text-xs text-white rounded-lg flex items-center gap-1 font-mono"
+                className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs rounded-lg flex items-center gap-1 font-mono font-bold"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Retry
               </button>

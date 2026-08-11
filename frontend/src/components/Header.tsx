@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Database, ShieldCheck } from 'lucide-react';
+import { FileText, Database, ShieldCheck, Layers, ChevronDown } from 'lucide-react';
 import type { CustomerBasicInfo } from '../types';
 
 interface HeaderProps {
@@ -20,72 +20,67 @@ export const Header: React.FC<HeaderProps> = ({
   citationCount,
 }) => {
   return (
-    <header className="bg-[#0A192F]/90 border-b border-[#00A3E0]/30 px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 backdrop-blur-md shadow-lg shadow-[#003366]/20">
-      {/* 1. Official State Bank of India Logo & Brand Header */}
+    <header className="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+      {/* 1. Brand Logo & Header */}
       <div className="flex items-center space-x-3.5">
-        {/* Iconic SBI Keyhole SVG Emblem */}
-        <div className="relative group cursor-pointer">
-          <svg viewBox="0 0 100 100" className="w-10 h-10 drop-shadow-[0_0_10px_rgba(0,163,224,0.5)] transition-transform group-hover:scale-105">
-            <circle cx="50" cy="50" r="48" fill="#00A3E0" />
-            <circle cx="50" cy="38" r="17" fill="#0A192F" />
-            <rect x="43.5" y="38" width="13" height="34" fill="#0A192F" />
-          </svg>
+        <div className="p-2.5 bg-blue-600 rounded-xl text-white shadow-md shadow-blue-500/20">
+          <Layers className="w-6 h-6" />
         </div>
 
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-black tracking-tight text-white font-sans flex items-center gap-2">
-              <span className="text-[#00A3E0]">STATE BANK</span> OF INDIA
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 font-sans flex items-center gap-2">
+              NEXUS <span className="text-blue-600">BANKING AI</span>
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#003366] text-[#00A3E0] border border-[#00A3E0]/40 tracking-wider">
-              YONO AI PLATFORM
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200 tracking-wider">
+              ENTERPRISE PLATFORM
             </span>
           </div>
-          <p className="text-[11px] text-gray-300 font-mono flex items-center gap-1.5 mt-0.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#00A3E0]" />
-            Grounding AI responses in deterministic DuckDB core banking data records
+          <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+            Grounding AI responses in deterministic DuckDB core banking records
           </p>
         </div>
       </div>
 
-      {/* 2. Customer Switcher & SBI Engine Status */}
+      {/* 2. Customer Switcher & Controls */}
       <div className="flex items-center space-x-4">
         {/* Customer Select Dropdown */}
         <div className="relative min-w-[280px]">
           <select
             value={selectedCustomerId || ''}
             onChange={(e) => onSelectCustomer(Number(e.target.value))}
-            className="w-full bg-[#020A17] border border-[#00A3E0]/40 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#00A3E0] cursor-pointer shadow-inner appearance-none pr-8 font-medium"
+            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white cursor-pointer shadow-sm pr-8 font-semibold"
           >
             {customers.map((c) => (
               <option key={c.customer_id} value={c.customer_id}>
-                {c.customer_id} — {c.name_1} ({c.kyc_status})
+                #{c.customer_id} — {c.name_1} ({c.kyc_status})
               </option>
             ))}
           </select>
-          <div className="absolute right-3 top-2.5 pointer-events-none text-[#00A3E0] text-xs">
-            ▼
-          </div>
+          <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-2.5 pointer-events-none" />
         </div>
 
         {/* DuckDB Database Active Pill */}
-        <div className="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-[#003366]/40 border border-[#00A3E0]/30 text-xs font-mono text-cyan-300">
-          <Database className="w-4 h-4 text-[#00A3E0] animate-pulse" />
-          <span>DuckDB Engine Active</span>
+        <div className="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono text-slate-700">
+          <Database className="w-4 h-4 text-blue-600" />
+          <span className="font-semibold">DuckDB Engine Active</span>
         </div>
 
         {/* Record Evidence Drawer Button */}
         <button
           onClick={onToggleEvidence}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold font-mono transition-all border shadow-md ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold font-mono transition-all border shadow-sm ${
             showEvidence
-              ? 'bg-[#00A3E0] text-[#0A192F] border-[#00A3E0] shadow-[#00A3E0]/30'
-              : 'bg-[#0A192F] text-gray-200 border-[#00A3E0]/40 hover:bg-[#003366]/60 hover:text-white'
+              ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/20'
+              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900'
           }`}
         >
-          <FileText className="w-4 h-4 text-[#00A3E0]" />
+          <FileText className="w-4 h-4 text-blue-600" />
           <span>Record Evidence</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#003366] text-[#00A3E0] border border-[#00A3E0]/40">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            showEvidence ? 'bg-white text-blue-700' : 'bg-slate-100 text-slate-700 border border-slate-200'
+          }`}>
             {citationCount}
           </span>
         </button>
