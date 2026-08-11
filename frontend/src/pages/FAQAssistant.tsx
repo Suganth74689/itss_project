@@ -71,15 +71,15 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
       {/* 1. Nexus RAG AI Assistant Banner */}
-      <div className="card-light p-6 rounded-2xl space-y-4 shadow-sm">
+      <div className="card-modern p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl border border-blue-200 shadow-sm">
+            <div className="p-3 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg shadow-blue-500/25">
               <Layers className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Nexus Banking & Ollama RAG Assistant</h2>
+                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">Nexus Banking & Ollama RAG Assistant</h2>
                 
                 {/* Live Ollama / DuckDB Status Badge */}
                 {ollamaStatus?.available ? (
@@ -120,13 +120,13 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
             }
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            className="w-full pl-12 pr-32 py-3.5 bg-slate-50 border border-slate-300 rounded-2xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-blue-600 focus:bg-white font-semibold shadow-inner"
+            className="w-full pl-12 pr-36 py-3.5 bg-slate-50 border border-slate-300 rounded-2xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-blue-600 focus:bg-white font-semibold shadow-inner"
           />
           <Search className="w-5 h-5 text-blue-600 absolute left-4 top-4" />
           <button
             type="submit"
             disabled={loading || !question.trim()}
-            className="absolute right-2.5 top-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold font-mono transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-md"
+            className="absolute right-2.5 top-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold font-mono transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-md"
           >
             {loading ? 'Querying...' : 'Ask Assistant'}
           </button>
@@ -168,14 +168,14 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
         <div className="space-y-4 animate-fade-in">
           {/* A. MATCHED QUERY ANSWER CARD */}
           {queryResult.status === 'MATCHED' && (
-            <div className="card-light p-6 rounded-2xl space-y-4 shadow-sm border-2 border-blue-500/30">
+            <div className="card-modern p-6 space-y-4 border-2 border-blue-500/30">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <div className="flex items-center space-x-2.5">
                   <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-200">
                     {queryResult.query_type === 'CUSTOMER_SPECIFIC' ? <User className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900">
+                    <h3 className="text-base font-display font-extrabold text-slate-900">
                       {queryResult.matched_faq?.question || (queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Customer 360 RAG Response (${queryResult.customer_name || 'Selected Customer'})` : queryResult.user_question)}
                     </h3>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -246,7 +246,7 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
                   <AlertOctagon className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Out-of-Scope Query Refusal</h3>
+                  <h3 className="text-base font-display font-extrabold text-slate-900">Out-of-Scope Query Refusal</h3>
                   <p className="text-xs text-rose-700 font-mono font-bold">Safety Guardrail Enforcement</p>
                 </div>
               </div>
@@ -284,9 +284,9 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
 
       {/* 4. Default FAQs Repository Browser */}
       {!queryResult && (
-        <div className="card-light p-6 rounded-2xl space-y-4 shadow-sm">
+        <div className="card-modern p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-display font-extrabold text-slate-900 flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />
               Verified Banking Knowledge Repository ({faqsList.length} FAQs)
             </h3>

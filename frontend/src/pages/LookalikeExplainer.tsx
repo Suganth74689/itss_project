@@ -38,7 +38,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
 
   if (!customerId) {
     return (
-      <div className="card-light p-12 rounded-2xl text-center space-y-3 font-mono shadow-sm">
+      <div className="card-modern p-12 text-center space-y-3 font-mono">
         <Layers className="w-12 h-12 text-blue-600 mx-auto opacity-50" />
         <p className="text-slate-500 text-sm">Please select a customer from the top menu bar to view lookalike portfolio risk analysis.</p>
       </div>
@@ -48,15 +48,15 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
   return (
     <div className="space-y-6 animate-fade-in font-sans">
       {/* 1. Header Banner */}
-      <div className="card-light p-6 rounded-2xl space-y-4 shadow-sm">
+      <div className="card-modern p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="p-3.5 bg-blue-50 text-blue-600 rounded-2xl border border-blue-200 shadow-sm">
+            <div className="p-3.5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg shadow-blue-500/25">
               <Users className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Lookalike Portfolio Risk Engine</h2>
+                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">Lookalike Portfolio Risk Engine</h2>
                 <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
                   Target Customer #{customerId} ({data?.target_customer_name || 'Loading...'})
                 </span>
@@ -109,7 +109,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
                     onClick={() => setSelectedMatch(item)}
                     className={`p-4 rounded-2xl transition-all cursor-pointer border shadow-sm ${
                       isSelected
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-500 shadow-lg shadow-blue-500/25'
                         : 'bg-white text-slate-900 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
                     }`}
                   >
@@ -146,14 +146,14 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
 
           {/* Selected Match Explainability Drawer */}
           {selectedMatch && (
-            <div className="lg:col-span-2 card-light p-6 rounded-2xl space-y-6 shadow-sm">
+            <div className="lg:col-span-2 card-modern p-6 space-y-6">
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-200">
                     <User className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-extrabold text-slate-900">Lookalike Customer Breakdown</h3>
+                    <h3 className="text-lg font-display font-extrabold text-slate-900">Lookalike Customer Breakdown</h3>
                     <p className="text-xs text-slate-500 font-mono">
                       Comparing Target Customer #{customerId} vs Lookalike #{selectedMatch.customer_id} ({selectedMatch.name_1})
                     </p>
@@ -162,7 +162,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
 
                 <button
                   onClick={() => onSelectCustomer(selectedMatch.customer_id)}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all text-xs font-mono font-bold flex items-center gap-1.5 shadow-md"
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all text-xs font-mono font-bold flex items-center gap-1.5 shadow-md"
                 >
                   <span>Inspect Customer 360</span>
                   <ArrowRight className="w-3.5 h-3.5" />

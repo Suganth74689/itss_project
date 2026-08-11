@@ -88,7 +88,7 @@ export function App() {
         {/* Dynamic Module Content View */}
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Quick Demo Customer Pills Bar */}
-          <div className="flex items-center justify-between bg-white border border-slate-200 p-3 rounded-2xl shadow-sm">
+          <div className="flex items-center justify-between bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-sm">
             <div className="flex items-center space-x-2 text-xs text-slate-600 font-mono">
               <Layers className="w-4 h-4 text-blue-600" />
               <span className="font-bold text-slate-900">Quick Interview Sample Customers:</span>
@@ -100,7 +100,7 @@ export function App() {
                   onClick={() => setSelectedCustomerId(id)}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all border ${
                     selectedCustomerId === id
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/20'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
                       : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
                   }`}
                 >
@@ -112,7 +112,7 @@ export function App() {
 
           {/* Loading Indicator */}
           {loading360 && (
-            <div className="card-light p-12 rounded-2xl flex flex-col items-center justify-center space-y-3 shadow-sm">
+            <div className="card-modern p-12 flex flex-col items-center justify-center space-y-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               <p className="text-sm text-slate-600 font-mono font-semibold">Querying DuckDB database for Customer #{selectedCustomerId}...</p>
             </div>

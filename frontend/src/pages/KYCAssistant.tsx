@@ -60,7 +60,7 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
 
   if (!customerId) {
     return (
-      <div className="card-light p-12 rounded-2xl text-center space-y-3 font-mono shadow-sm">
+      <div className="card-modern p-12 text-center space-y-3 font-mono">
         <Layers className="w-12 h-12 text-blue-600 mx-auto opacity-50" />
         <p className="text-slate-500 text-sm">Please select a customer from the top menu bar to view e-KYC compliance details.</p>
       </div>
@@ -70,15 +70,15 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
   return (
     <div className="space-y-6 animate-fade-in font-sans">
       {/* 1. e-KYC Header Banner */}
-      <div className="card-light p-6 rounded-2xl space-y-4 shadow-sm">
+      <div className="card-modern p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <div className="p-3.5 bg-blue-50 text-blue-600 rounded-2xl border border-blue-200 shadow-sm">
+            <div className="p-3.5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg shadow-blue-500/25">
               <ShieldCheck className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">e-KYC Compliance Engine</h2>
+                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">e-KYC Compliance Engine</h2>
                 <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
                   Customer ID: #{customerId}
                 </span>
@@ -140,9 +140,9 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
 
       {/* 2. Verification Form Modal / Drawer */}
       {verifyingDoc && (
-        <div className="card-light p-6 rounded-2xl border-2 border-blue-600 space-y-4 animate-fade-in shadow-xl bg-white">
+        <div className="card-modern p-6 border-2 border-blue-600 space-y-4 animate-fade-in shadow-xl bg-white">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <h3 className="text-base font-display font-extrabold text-slate-900 flex items-center gap-2">
               <Upload className="w-5 h-5 text-blue-600" />
               Verify Document: <span className="text-blue-600">{verifyingDoc}</span>
             </h3>
@@ -188,9 +188,9 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
       {assessment && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Regulatory Fields Status */}
-          <div className="lg:col-span-2 card-light p-5 rounded-2xl space-y-4 shadow-sm">
+          <div className="lg:col-span-2 card-modern p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <h3 className="text-base font-display font-extrabold text-slate-900 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-600" />
                 e-KYC Master Field Compliance Status
               </h3>
@@ -232,8 +232,8 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
           {/* Actionable Next Steps & Required Docs */}
           <div className="space-y-6">
             {/* Required Documents Checklist */}
-            <div className="card-light p-5 rounded-2xl space-y-4 shadow-sm">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
+            <div className="card-modern p-5 space-y-4">
+              <h3 className="text-base font-display font-extrabold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
                 <Upload className="w-5 h-5 text-amber-600" />
                 Pending Verification Checklist
               </h3>
@@ -262,8 +262,8 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
             </div>
 
             {/* Recommended Next Actions */}
-            <div className="card-light p-5 rounded-2xl space-y-4 shadow-sm">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
+            <div className="card-modern p-5 space-y-4">
+              <h3 className="text-base font-display font-extrabold text-slate-900 flex items-center gap-2 border-b border-slate-200 pb-3">
                 <ArrowRight className="w-5 h-5 text-blue-600" />
                 Compliance Recommended Actions
               </h3>

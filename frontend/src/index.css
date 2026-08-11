@@ -1,39 +1,49 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
 :root {
-  --bg-app: #F8FAFC;
-  --bg-card: #FFFFFF;
-  --border-card: #E2E8F0;
-  --text-main: #0F172A;
-  --text-muted: #64748B;
-  --accent-blue: #2563EB;
-  --accent-indigo: #4F46E5;
-  --accent-cyan: #0284C7;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
 }
 
 body {
   margin: 0;
-  background-color: var(--bg-app);
-  color: var(--text-main);
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Light Glassmorphism / Card Panel */
-.card-light {
-  background: #FFFFFF;
+/* Custom Display Font Utility */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Ultra-Modern Card Panel */
+.card-modern {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
   border: 1px solid #E2E8F0;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.04), 0 4px 6px -2px rgba(15, 23, 42, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card-light:hover {
+.card-modern:hover {
   border-color: #CBD5E1;
-  box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -4px rgba(15, 23, 42, 0.04);
+  transform: translateY(-2px);
 }
 
-/* Light Mode Custom Scrollbar */
+/* Hero Dark Card Panel */
+.card-hero-dark {
+  background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.3);
+}
+
+/* Custom Modern Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -50,4 +60,20 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #2563EB;
+}
+
+/* Smooth Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
