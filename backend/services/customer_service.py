@@ -6,6 +6,27 @@ from schemas import (
     CitationEvidence, CustomerBasicInfo
 )
 
+def safe_float(val: Any, default: float = 0.0) -> float:
+    if val is None:
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    clean_str = str(val).replace('₹', '').replace('$', '').replace(',', '').strip()
+    try:
+        return float(clean_str)
+    except (ValueError, TypeError):
+        return default
+
+def safe_int(val: Any, default: int = 0) -> int:
+    if val is None:
+        return default
+    if isinstance(val, int):
+        return val
+    try:
+        return int(float(str(val).replace(',', '').strip()))
+    except (ValueError, TypeError):
+        return default
+
 class CustomerService:
     @staticmethod
     def list_customers(query: Optional[str] = None, limit: int = 50) -> List[CustomerBasicInfo]:
@@ -13,7 +34,7 @@ class CustomerService:
         sql = "SELECT customer_id, name_1, kyc_status, monthly_income, employment_type FROM customers"
         params = []
         
-        if query:
+        if query and query.strip():
             sql += " WHERE CAST(customer_id AS VARCHAR) LIKE ? OR LOWER(name_1) LIKE ?"
             q_param = f"%{query.strip().lower()}%"
             params = [f"%{query.strip()}%", q_param]
@@ -25,11 +46,11 @@ class CustomerService:
         result = []
         for r in rows:
             result.append(CustomerBasicInfo(
-                customer_id=r[0],
-                name_1=r[1],
-                kyc_status=r[2] if r[2] else "UNKNOWN",
-                monthly_income=float(r[3] or 0),
-                employment_type=r[4]
+                customer_id=safe_int(r[0]),
+                name_1=str(r[1] or "Unknown"),
+                kyc_status=str(r[2]) if r[2] else "UNKNOWN",
+                monthly_income=safe_float(r[3]),
+                employment_type=str(r[4]) if r[4] else None
             ))
         return result
 
@@ -45,21 +66,21 @@ class CustomerService:
             return None
             
         return CustomerProfile(
-            customer_id=row[0],
-            mnemonic=row[1],
-            short_name=row[2],
-            name_1=row[3],
-            street=row[4],
-            town_country=row[5],
-            nationality=row[6],
-            residence=row[7],
-            sector=row[8],
-            account_officer=row[9],
+            customer_id=safe_int(row[0]),
+            mnemonic=str(row[1]) if row[1] else None,
+            short_name=str(row[2]) if row[2] else None,
+            name_1=str(row[3] or "Unknown"),
+            street=str(row[4]) if row[4] else None,
+            town_country=str(row[5]) if row[5] else None,
+            nationality=str(row[6]) if row[6] else None,
+            residence=str(row[7]) if row[7] else None,
+            sector=safe_int(row[8]) if row[8] is not None else None,
+            account_officer=safe_int(row[9]) if row[9] is not None else None,
             date_of_birth=str(row[10]) if row[10] else None,
-            customer_status=row[11],
-            kyc_status=row[12] if row[12] else "UNKNOWN",
-            monthly_income=float(row[13] or 0),
-            employment_type=row[14]
+            customer_status=safe_int(row[11]) if row[11] is not None else None,
+            kyc_status=str(row[12]) if row[12] else "UNKNOWN",
+            monthly_income=safe_float(row[13]),
+            employment_type=str(row[14]) if row[14] else None
         )
 
     @staticmethod
@@ -72,15 +93,15 @@ class CustomerService:
         
         return [
             AccountItem(
-                account_id=r[0],
-                customer_id=r[1],
-                category=r[2],
-                currency=r[3] or "INR",
-                account_title=r[4] or "",
+                account_id=safe_int(r[0]),
+                customer_id=safe_int(r[1]),
+                category=safe_int(r[2]),
+                currency=str(r[3]) if r[3] else "INR",
+                account_title=str(r[4]) if r[4] else "",
                 opening_date=str(r[5]) if r[5] else None,
-                working_balance=float(r[6] or 0),
-                posting_restrict=r[7],
-                product=r[8]
+                working_balance=safe_float(r[6]),
+                posting_restrict=str(r[7]) if r[7] else None,
+                product=str(r[8]) if r[8] else None
             ) for r in rows
         ]
 
@@ -95,18 +116,18 @@ class CustomerService:
         return [
             LoanItem(
                 loan_id=str(r[0]),
-                customer_id=r[1],
-                product=r[2] or "PERSONAL",
-                currency=r[3] or "INR",
-                sanctioned_amount=float(r[4] or 0),
-                outstanding=float(r[5] or 0),
-                interest_rate=float(r[6] or 0),
-                tenure_months=int(r[7] or 0),
+                customer_id=safe_int(r[1]),
+                product=str(r[2]) if r[2] else "PERSONAL",
+                currency=str(r[3]) if r[3] else "INR",
+                sanctioned_amount=safe_float(r[4]),
+                outstanding=safe_float(r[5]),
+                interest_rate=safe_float(r[6]),
+                tenure_months=safe_int(r[7]),
                 start_date=str(r[8]) if r[8] else None,
-                status=r[9] or "CURRENT",
-                days_past_due=int(r[10] or 0),
-                collateral_value=float(r[11] or 0),
-                limit_amount=float(r[12] or 0)
+                status=str(r[9]) if r[9] else "CURRENT",
+                days_past_due=safe_int(r[10]),
+                collateral_value=safe_float(r[11]),
+                limit_amount=safe_float(r[12])
             ) for r in rows
         ]
 
@@ -121,16 +142,16 @@ class CustomerService:
         return [
             TransactionItem(
                 txn_id=str(r[0]),
-                account_id=r[1],
-                customer_id=r[2],
+                account_id=safe_int(r[1]),
+                customer_id=safe_int(r[2]),
                 txn_date=str(r[3]),
                 value_date=str(r[4]) if r[4] else None,
-                amount=float(r[5] or 0),
-                txn_type=r[6] or "DEBIT",
-                counterparty=r[7],
-                narrative=r[8],
-                channel=r[9],
-                is_suspicious=r[10] or "N"
+                amount=safe_float(r[5]),
+                txn_type=str(r[6]) if r[6] else "DEBIT",
+                counterparty=str(r[7]) if r[7] else None,
+                narrative=str(r[8]) if r[8] else None,
+                channel=str(r[9]) if r[9] else None,
+                is_suspicious=str(r[10]) if r[10] else "N"
             ) for r in rows
         ]
 
@@ -145,14 +166,14 @@ class CustomerService:
         return [
             LoanApplicationItem(
                 application_id=str(r[0]),
-                customer_id=r[1],
-                product=r[2] or "PERSONAL",
-                requested_amount=float(r[3] or 0),
-                tenure_months=int(r[4] or 0),
-                existing_emi=float(r[5] or 0),
-                credit_score=int(r[6] or 0),
-                purpose=r[7],
-                decision_label=r[8] or "REFER"
+                customer_id=safe_int(r[1]),
+                product=str(r[2]) if r[2] else "PERSONAL",
+                requested_amount=safe_float(r[3]),
+                tenure_months=safe_int(r[4]),
+                existing_emi=safe_float(r[5]),
+                credit_score=safe_int(r[6]),
+                purpose=str(r[7]) if r[7] else None,
+                decision_label=str(r[8]) if r[8] else "REFER"
             ) for r in rows
         ]
 
@@ -166,16 +187,16 @@ class CustomerService:
         
         return [
             LimitCollateralItem(
-                customer_id=r[0],
+                customer_id=safe_int(r[0]),
                 limit_id=str(r[1]) if r[1] else None,
-                limit_product=r[2],
-                currency=r[3] or "INR",
-                approved_limit=float(r[4] or 0),
-                utilized=float(r[5] or 0),
-                available=float(r[6] or 0),
+                limit_product=str(r[2]) if r[2] else None,
+                currency=str(r[3]) if r[3] else "INR",
+                approved_limit=safe_float(r[4]),
+                utilized=safe_float(r[5]),
+                available=safe_float(r[6]),
                 collateral_id=str(r[7]) if r[7] else None,
-                collateral_type=r[8],
-                collateral_value=float(r[9] or 0)
+                collateral_type=str(r[8]) if r[8] else None,
+                collateral_value=safe_float(r[9])
             ) for r in rows
         ]
 
@@ -191,7 +212,7 @@ class CustomerService:
         applications = cls.get_applications(customer_id)
         limits = cls.get_limits(customer_id)
         
-        # Calculate key metrics
+        # Calculate key metrics safely
         total_balance = sum(a.working_balance for a in accounts)
         total_sanctioned = sum(l.sanctioned_amount for l in loans)
         total_outstanding = sum(l.outstanding for l in loans)
