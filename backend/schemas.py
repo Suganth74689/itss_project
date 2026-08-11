@@ -95,7 +95,6 @@ class Customer360Response(BaseModel):
     applications: List[LoanApplicationItem]
     limits: List[LimitCollateralItem]
     
-    # Financial metrics calculated deterministically
     total_working_balance: float
     total_sanctioned_loan: float
     total_outstanding_loan: float
@@ -105,7 +104,6 @@ class Customer360Response(BaseModel):
     total_available_limit: float
     suspicious_txn_count: int
     
-    # Source Citations / Evidence dictionary
     citations: List[CitationEvidence]
 
 class CustomerBasicInfo(BaseModel):
@@ -114,3 +112,56 @@ class CustomerBasicInfo(BaseModel):
     kyc_status: str
     monthly_income: float
     employment_type: Optional[str] = None
+
+# --- B2 KYC SCHEMAS ---
+
+class KycFieldItem(BaseModel):
+    category_key: str
+    field_name: str
+    label: str
+    value: Any
+    is_verified: bool
+    documents_required: List[str]
+
+class KycCategorySummary(BaseModel):
+    category_key: str
+    title: str
+    total_fields: int
+    verified_fields: int
+    is_complete: bool
+
+class KycAssessmentResponse(BaseModel):
+    customer_id: int
+    name_1: str
+    overall_status: str  # COMPLETE / PENDING / EXPIRED
+    completeness_percentage: float
+    categories: List[KycCategorySummary]
+    fields: List[KycFieldItem]
+    missing_fields: List[str]
+    recommended_actions: List[str]
+    documents_checklist: List[str]
+    citations: List[CitationEvidence]
+
+# --- B3 FAQ SCHEMAS ---
+
+class FaqItem(BaseModel):
+    id: str
+    category: str
+    question: str
+    answer: str
+    keywords: List[str]
+    related_faqs: List[str]
+
+class FaqQueryRequest(BaseModel):
+    question: str
+
+class FaqQueryResponse(BaseModel):
+    status: str  # MATCHED / REFUSED
+    user_question: str
+    matched_faq: Optional[FaqItem] = None
+    confidence_score: str  # HIGH / MEDIUM / REFUSED
+    similarity_score: float
+    explanation: str
+    refusal_reason: Optional[str] = None
+    suggested_related_faqs: List[FaqItem] = []
+    citations: List[CitationEvidence] = []

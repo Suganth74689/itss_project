@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Sidebar, type ModuleType } from './components/Sidebar';
 import { Customer360 } from './pages/Customer360';
-import { KYCPreview } from './pages/KYCPreview';
-import { FAQPreview } from './pages/FAQPreview';
+import { KYCAssistant } from './pages/KYCAssistant';
+import { FAQAssistant } from './pages/FAQAssistant';
 import { LookalikePreview } from './pages/LookalikePreview';
 import { EvidenceDrawer } from './components/EvidenceDrawer';
 import { fetchCustomers, fetchCustomer360 } from './api';
@@ -124,14 +124,20 @@ export function App() {
           )}
 
           {/* Module View Renderer */}
-          {!loading360 && c360Data && (
+          {!loading360 && (
             <>
-              {activeModule === 'b1-customer360' && (
+              {activeModule === 'b1-customer360' && c360Data && (
                 <Customer360 data={c360Data} onOpenEvidence={() => setShowEvidence(true)} />
               )}
-              {activeModule === 'b2-kyc' && <KYCPreview data={c360Data} />}
-              {activeModule === 'b3-faq' && <FAQPreview />}
-              {activeModule === 'b4-lookalike' && <LookalikePreview data={c360Data} />}
+              {activeModule === 'b2-kyc' && (
+                <KYCAssistant customerId={selectedCustomerId} onOpenEvidence={() => setShowEvidence(true)} />
+              )}
+              {activeModule === 'b3-faq' && (
+                <FAQAssistant onOpenEvidence={() => setShowEvidence(true)} />
+              )}
+              {activeModule === 'b4-lookalike' && (
+                <LookalikePreview data={c360Data} />
+              )}
             </>
           )}
         </main>

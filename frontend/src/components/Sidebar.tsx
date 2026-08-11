@@ -15,7 +15,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }
       label: 'B1 — Customer 360',
       desc: 'Complete Q&A & financial summary',
       icon: LayoutDashboard,
-      active: true,
       badge: 'Operational',
       badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
     },
@@ -24,26 +23,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }
       label: 'B2 — KYC Completeness',
       desc: 'Configurable compliance engine',
       icon: UserCheck,
-      active: false,
-      badge: 'Phase 2',
-      badgeColor: 'bg-gray-800 text-gray-400 border-gray-700'
+      badge: 'Operational',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
     },
     {
       id: 'b3-faq' as ModuleType,
       label: 'B3 — Bank FAQ Assistant',
       desc: 'Restricted knowledge RAG',
       icon: HelpCircle,
-      active: false,
-      badge: 'Phase 2',
-      badgeColor: 'bg-gray-800 text-gray-400 border-gray-700'
+      badge: 'Operational',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
     },
     {
       id: 'b4-lookalike' as ModuleType,
       label: 'B4 — Lookalike Explainer',
       desc: 'Weighted customer similarity ML',
       icon: Users,
-      active: false,
-      badge: 'Phase 2',
+      badge: 'Phase 3',
       badgeColor: 'bg-gray-800 text-gray-400 border-gray-700'
     }
   ];

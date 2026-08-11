@@ -118,3 +118,62 @@ export interface CustomerBasicInfo {
   monthly_income: number;
   employment_type?: string;
 }
+
+// --- B2 KYC TYPES ---
+
+export interface KycFieldItem {
+  category_key: string;
+  field_name: string;
+  label: string;
+  value: any;
+  is_verified: boolean;
+  documents_required: string[];
+}
+
+export interface KycCategorySummary {
+  category_key: string;
+  title: string;
+  total_fields: number;
+  verified_fields: number;
+  is_complete: boolean;
+}
+
+export interface KycAssessmentResponse {
+  customer_id: number;
+  name_1: string;
+  overall_status: string; // COMPLETE / PENDING / EXPIRED
+  completeness_percentage: number;
+  categories: KycCategorySummary[];
+  fields: KycFieldItem[];
+  missing_fields: string[];
+  recommended_actions: string[];
+  documents_checklist: string[];
+  citations: CitationEvidence[];
+}
+
+// --- B3 FAQ TYPES ---
+
+export interface FaqItem {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  keywords: string[];
+  related_faqs: string[];
+}
+
+export interface FaqQueryRequest {
+  question: string;
+}
+
+export interface FaqQueryResponse {
+  status: string; // MATCHED / REFUSED
+  user_question: string;
+  matched_faq?: FaqItem;
+  confidence_score: string; // HIGH / MEDIUM / REFUSED
+  similarity_score: number;
+  explanation: string;
+  refusal_reason?: string;
+  suggested_related_faqs: FaqItem[];
+  citations: CitationEvidence[];
+}

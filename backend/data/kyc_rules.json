@@ -1,0 +1,29 @@
+{
+  "categories": {
+    "identity": {
+      "title": "Identity Verification",
+      "required_fields": ["name_1", "date_of_birth"],
+      "documents_required": ["Government Issued ID (PAN/Aadhaar)", "Passport Size Photograph"]
+    },
+    "address": {
+      "title": "Address & Contact Details",
+      "required_fields": ["street", "town_country"],
+      "documents_required": ["Utility Bill / Bank Statement (less than 3 months old)", "Address Declaration"]
+    },
+    "residency": {
+      "title": "Nationality & Tax Residency",
+      "required_fields": ["nationality", "residence"],
+      "documents_required": ["FATCA / CRS Declaration Form", "Passport Copy"]
+    },
+    "financial_profile": {
+      "title": "Financial Profile & Occupation",
+      "required_fields": ["monthly_income", "employment_type"],
+      "documents_required": ["Salary Slips (3 months) / Income Tax Return", "Form 16 / Business License"]
+    },
+    "compliance_status": {
+      "title": "Regulatory KYC Status",
+      "required_fields": ["kyc_status"],
+      "documents_required": ["KYC Refresh Form / Re-KYC Declaration"]
+    }
+  }
+}

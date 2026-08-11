@@ -1,0 +1,74 @@
+[
+  {
+    "id": "FAQ001",
+    "category": "Accounts",
+    "question": "What documents are required to open a new savings account?",
+    "answer": "To open a new savings account, you need: 1) Proof of Identity (PAN Card or Aadhaar), 2) Proof of Address (Passport, Utility Bill, or Driving License), 3) Two recent passport-size photographs, and 4) A signed account opening form with initial deposit.",
+    "keywords": ["open account", "savings account", "documents required", "open new account", "account proof"],
+    "related_faqs": ["FAQ003", "FAQ005"]
+  },
+  {
+    "id": "FAQ002",
+    "category": "Security & NetBanking",
+    "question": "How can I reset my NetBanking password if I forget it?",
+    "answer": "You can reset your NetBanking password online by visiting the internet banking portal, clicking 'Forgot Password', entering your Customer ID and registered mobile number, and verifying the One-Time Password (OTP) sent to your phone.",
+    "keywords": ["reset password", "forgot password", "netbanking password", "login issue", "password recovery"],
+    "related_faqs": ["FAQ007", "FAQ008"]
+  },
+  {
+    "id": "FAQ003",
+    "category": "Compliance & KYC",
+    "question": "What happens when my KYC status expires?",
+    "answer": "When your KYC status expires, temporary debit restrictions ('KYC Hold') may be placed on your account. You will need to submit updated identity and address proof documents along with a Re-KYC declaration form to restore full account services.",
+    "keywords": ["kyc expired", "kyc status", "re-kyc", "kyc hold", "posting restrict", "update kyc"],
+    "related_faqs": ["FAQ001", "FAQ008"]
+  },
+  {
+    "id": "FAQ004",
+    "category": "Loans & Credit",
+    "question": "What is the minimum credit score required for a personal loan?",
+    "answer": "Generally, a minimum CIBIL credit score of 700 is recommended for personal loan approval. Applicants with scores above 750 receive preferable interest rates and faster loan sanctioning.",
+    "keywords": ["credit score", "personal loan", "loan eligibility", "minimum credit score", "cibil score"],
+    "related_faqs": ["FAQ006", "FAQ009"]
+  },
+  {
+    "id": "FAQ005",
+    "category": "Accounts & Rates",
+    "question": "What are the interest rates offered on savings accounts?",
+    "answer": "Savings accounts currently offer interest rates starting at 3.50% per annum for daily balances up to ₹1 Lakh, and 4.00% per annum for balances exceeding ₹1 Lakh, calculated daily and credited quarterly.",
+    "keywords": ["interest rate", "savings rate", "account interest", "deposit interest", "annual return"],
+    "related_faqs": ["FAQ001"]
+  },
+  {
+    "id": "FAQ006",
+    "category": "Loans & Credit",
+    "question": "How is my loan Equated Monthly Installment (EMI) calculated?",
+    "answer": "Loan EMI is calculated using the formula: EMI = [P x R x (1+R)^N]/[(1+R)^N-1], where P is the sanctioned principal amount, R is the monthly interest rate, and N is the loan tenure in months.",
+    "keywords": ["emi calculation", "calculate emi", "loan emi", "monthly installment", "tenure months"],
+    "related_faqs": ["FAQ004", "FAQ009"]
+  },
+  {
+    "id": "FAQ007",
+    "category": "Security & Fraud",
+    "question": "What should I do if I notice an unauthorized or suspicious transaction?",
+    "answer": "If you detect an unauthorized transaction, immediately block your debit card or account via NetBanking or by calling our 24/7 Fraud Helpline. Submit a transaction dispute form within 3 days for zero liability protection.",
+    "keywords": ["suspicious transaction", "fraud transaction", "unauthorized debit", "block card", "report fraud"],
+    "related_faqs": ["FAQ002"]
+  },
+  {
+    "id": "FAQ008",
+    "category": "Transfers & Payments",
+    "question": "What are the transfer limits for NEFT, RTGS, and IMPS?",
+    "answer": "IMPS transfers allow instant transfers up to ₹5 Lakhs per day. NEFT has no maximum transaction limit with 24/7 batch processing. RTGS is used for high-value transfers with a minimum limit of ₹2 Lakhs.",
+    "keywords": ["transfer limit", "neft limit", "rtgs limit", "imps limit", "wire transfer", "payment limit"],
+    "related_faqs": ["FAQ002", "FAQ007"]
+  },
+  {
+    "id": "FAQ009",
+    "category": "Loans & Credit",
+    "question": "How can I request an increase in my credit card approved limit?",
+    "answer": "Existing customers with a clean repayment record (0 DPD) and updated KYC can request a credit limit enhancement through NetBanking under 'Credit Cards > Manage Limit', subject to income verification.",
+    "keywords": ["credit limit", "limit increase", "approved limit", "limit enhancement", "available limit"],
+    "related_faqs": ["FAQ004", "FAQ006"]
+  }
+]
