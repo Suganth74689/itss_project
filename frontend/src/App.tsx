@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { Sidebar, type ModuleType } from './components/Sidebar';
 import { Customer360 } from './pages/Customer360';
@@ -21,39 +21,50 @@ export function App() {
   
   const [showEvidence, setShowEvidence] = useState<boolean>(false);
 
+  const loadCustomers = useCallback(async () => {
+    try {
+      const list = await fetchCustomers();
+      setCustomers(list);
+      if (list.length > 0 && !selectedCustomerId) {
+        setSelectedCustomerId(list[0].customer_id);
+      }
+    } catch (err: any) {
+      setError('Failed to connect to DuckDB Backend API');
+    }
+  }, [selectedCustomerId]);
+
+  const load360 = useCallback(async (id: number) => {
+    try {
+      setLoading360(true);
+      setError(null);
+      const data = await fetchCustomer360(id);
+      setC360Data(data);
+    } catch (err: any) {
+      setError(`Failed to load data for Customer ID ${id}`);
+    } finally {
+      setLoading360(false);
+    }
+  }, []);
+
   // Load customer list on startup
   useEffect(() => {
-    async function loadCustomers() {
-      try {
-        const list = await fetchCustomers();
-        setCustomers(list);
-        if (list.length > 0 && !selectedCustomerId) {
-          setSelectedCustomerId(list[0].customer_id);
-        }
-      } catch (err: any) {
-        setError('Failed to connect to DuckDB Backend API');
-      }
-    }
     loadCustomers();
-  }, []);
+  }, [loadCustomers]);
 
   // Fetch Customer 360 profile whenever selected customer changes
   useEffect(() => {
-    if (!selectedCustomerId) return;
-    async function load360() {
-      try {
-        setLoading360(true);
-        setError(null);
-        const data = await fetchCustomer360(selectedCustomerId!);
-        setC360Data(data);
-      } catch (err: any) {
-        setError(`Failed to load data for Customer ID ${selectedCustomerId}`);
-      } finally {
-        setLoading360(false);
-      }
+    if (selectedCustomerId) {
+      load360(selectedCustomerId);
     }
-    load360();
-  }, [selectedCustomerId]);
+  }, [selectedCustomerId, load360]);
+
+  // Handler when KYC document is verified dynamically
+  const handleKycUpdated = () => {
+    if (selectedCustomerId) {
+      load360(selectedCustomerId);
+      loadCustomers();
+    }
+  };
 
   const featuredCustomers = [100100, 100106, 100101, 100102, 100103];
 
@@ -127,10 +138,18 @@ export function App() {
           {!loading360 && (
             <>
               {activeModule === 'b1-customer360' && c360Data && (
-                <Customer360 data={c360Data} onOpenEvidence={() => setShowEvidence(true)} />
+                <Customer360
+                  data={c360Data}
+                  onOpenEvidence={() => setShowEvidence(true)}
+                  onNavigateToKyc={() => setActiveModule('b2-kyc')}
+                />
               )}
               {activeModule === 'b2-kyc' && (
-                <KYCAssistant customerId={selectedCustomerId} onOpenEvidence={() => setShowEvidence(true)} />
+                <KYCAssistant
+                  customerId={selectedCustomerId}
+                  onOpenEvidence={() => setShowEvidence(true)}
+                  onKycUpdated={handleKycUpdated}
+                />
               )}
               {activeModule === 'b3-faq' && (
                 <FAQAssistant onOpenEvidence={() => setShowEvidence(true)} />

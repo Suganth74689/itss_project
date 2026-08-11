@@ -5,17 +5,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from schemas import (
     CustomerBasicInfo, CustomerProfile, Customer360Response,
     AccountItem, LoanItem, TransactionItem, LoanApplicationItem, LimitCollateralItem,
-    KycAssessmentResponse, FaqItem, FaqQueryRequest, FaqQueryResponse
+    KycAssessmentResponse, KycVerifyDocumentRequest, KycVerifyDocumentResponse,
+    FaqItem, FaqQueryRequest, FaqQueryResponse
 )
 from services.customer_service import CustomerService
 from services.kyc_service import KycService
 from services.faq_service import FaqService
-from db import get_db
+from db import get_db, reset_db
 
 app = FastAPI(
     title="Banking Intelligence Assistant API",
-    version="2.0.0",
-    description="Explainable Banking AI Backend (Customer 360, KYC Completeness, & Restricted Bank FAQ RAG)."
+    version="2.1.0",
+    description="Explainable Banking AI Backend with Persistent DuckDB Engine & Dynamic Document Verification."
 )
 
 # Enable CORS for local React development
@@ -29,7 +30,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
-    # Initialize DuckDB database connection & load CSV datasets
+    # Initialize persistent DuckDB database connection
     get_db()
     # Pre-load FAQ knowledge base
     FaqService.load_faqs()
@@ -39,8 +40,13 @@ def health_check():
     return {
         "status": "ok",
         "service": "Banking Intelligence Assistant API",
-        "phase": "Phase 2 (50% Completion)"
+        "phase": "Phase 2.1 (Dynamic DuckDB Persistence & KYC Document Verification)"
     }
+
+@app.post("/api/db/reset")
+def reset_database_endpoint():
+    reset_db()
+    return {"status": "ok", "message": "DuckDB database successfully re-initialized from raw CSV dataset."}
 
 # --- B1: CUSTOMER 360 ENDPOINTS ---
 
@@ -90,6 +96,13 @@ def get_customer_kyc(customer_id: int):
     if not assessment:
         raise HTTPException(status_code=404, detail=f"Customer ID {customer_id} not found")
     return assessment
+
+@app.post("/api/customers/{customer_id}/kyc/verify", response_model=KycVerifyDocumentResponse)
+def verify_customer_kyc_document(customer_id: int, req: KycVerifyDocumentRequest):
+    res = KycService.verify_customer_document(customer_id, req)
+    if not res.success:
+        raise HTTPException(status_code=400, detail=res.message)
+    return res
 
 # --- B3: BANK FAQ ASSISTANT ENDPOINTS ---
 

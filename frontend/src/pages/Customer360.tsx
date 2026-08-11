@@ -2,15 +2,16 @@ import React from 'react';
 import type { Customer360Response } from '../types';
 import { 
   Building2, CreditCard, DollarSign, AlertTriangle, ShieldCheck, 
-  FileSpreadsheet, Clock, ChevronRight, BadgeAlert, Layers
+  FileSpreadsheet, Clock, ChevronRight, BadgeAlert, Layers, Upload
 } from 'lucide-react';
 
 interface Customer360Props {
   data: Customer360Response;
   onOpenEvidence: () => void;
+  onNavigateToKyc?: () => void;
 }
 
-export const Customer360: React.FC<Customer360Props> = ({ data, onOpenEvidence }) => {
+export const Customer360: React.FC<Customer360Props> = ({ data, onOpenEvidence, onNavigateToKyc }) => {
   const { 
     customer, accounts, loans, transactions,
     total_working_balance, total_outstanding_loan, total_sanctioned_loan,
@@ -45,6 +46,18 @@ export const Customer360: React.FC<Customer360Props> = ({ data, onOpenEvidence }
               <div className="flex items-center gap-3 flex-wrap">
                 <h2 className="text-2xl font-bold text-white tracking-tight">{customer.name_1}</h2>
                 {getKycBadge(customer.kyc_status)}
+                
+                {/* Dynamic Quick Verification Action */}
+                {customer.kyc_status.toUpperCase() !== 'COMPLETE' && onNavigateToKyc && (
+                  <button
+                    onClick={onNavigateToKyc}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold rounded-full transition-all"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Verify Document & Clear Hold →</span>
+                  </button>
+                )}
+
                 <span className="text-xs font-mono text-gray-400 bg-gray-900 border border-gray-800 px-2.5 py-1 rounded-md">
                   ID: {customer.customer_id}
                 </span>

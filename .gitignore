@@ -3,6 +3,11 @@ backend/.venv/
 frontend/node_modules/
 node_modules/
 
+# Local Persistent Database
+data/
+*.duckdb
+*.duckdb.tmp
+
 # Build outputs
 frontend/dist/
 build/

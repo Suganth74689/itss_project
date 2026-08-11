@@ -2,10 +2,11 @@ import json
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
+from db import get_db
 from services.customer_service import CustomerService
 from schemas import (
     KycAssessmentResponse, KycCategorySummary, KycFieldItem,
-    CitationEvidence
+    CitationEvidence, KycVerifyDocumentRequest, KycVerifyDocumentResponse
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -116,14 +117,14 @@ class KycService:
         overall_status = customer.kyc_status.upper()
 
         if overall_status == "EXPIRED":
-          recommended_actions.append("→ Issue urgent KYC refresh notice to customer.")
-          recommended_actions.append("→ Request updated address proof and signed Re-KYC declaration.")
-          recommended_actions.append("→ Verify current employment & monthly income status.")
+            recommended_actions.append("→ Issue urgent KYC refresh notice to customer.")
+            recommended_actions.append("→ Request updated address proof and signed Re-KYC declaration.")
+            recommended_actions.append("→ Verify current employment & monthly income status.")
         elif overall_status == "PENDING":
-          recommended_actions.append("→ Review submitted identity documents.")
-          recommended_actions.append("→ Verify PAN/Aadhaar details with central registry.")
+            recommended_actions.append("→ Review submitted identity documents.")
+            recommended_actions.append("→ Verify PAN/Aadhaar details with central registry.")
         else:
-          recommended_actions.append("✓ KYC profile is fully compliant. Schedule next periodic review in 12 months.")
+            recommended_actions.append("✓ KYC profile is fully compliant. Schedule next periodic review in 12 months.")
 
         return KycAssessmentResponse(
             customer_id=customer.customer_id,
@@ -136,4 +137,35 @@ class KycService:
             recommended_actions=recommended_actions,
             documents_checklist=list(documents_checklist_set),
             citations=citations
+        )
+
+    @classmethod
+    def verify_customer_document(cls, customer_id: int, req: KycVerifyDocumentRequest) -> KycVerifyDocumentResponse:
+        conn = get_db()
+        
+        # Check if customer exists
+        cust = conn.execute("SELECT customer_id, name_1 FROM customers WHERE customer_id = ?", [customer_id]).fetchone()
+        if not cust:
+            return KycVerifyDocumentResponse(
+                success=False,
+                message=f"Customer ID {customer_id} not found in database.",
+                updated_assessment=None
+            )
+
+        # Execute dynamic SQL UPDATE in DuckDB database
+        conn.execute(
+            "UPDATE customers SET kyc_status = 'COMPLETE' WHERE customer_id = ?",
+            [customer_id]
+        )
+
+        # Re-evaluate updated customer KYC assessment
+        updated_assessment = cls.evaluate_customer_kyc(customer_id)
+
+        doc_ref = f" (Ref #{req.document_number})" if req.document_number else ""
+        msg = f"Successfully verified document '{req.document_type}'{doc_ref} for {cust[1]}. DuckDB database updated dynamically: KYC status changed to COMPLETE (100% Verified)."
+
+        return KycVerifyDocumentResponse(
+            success=True,
+            message=msg,
+            updated_assessment=updated_assessment
         )

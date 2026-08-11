@@ -151,6 +151,18 @@ export interface KycAssessmentResponse {
   citations: CitationEvidence[];
 }
 
+export interface KycVerifyDocumentRequest {
+  document_type: string;
+  document_number: string;
+  notes?: string;
+}
+
+export interface KycVerifyDocumentResponse {
+  success: boolean;
+  message: string;
+  updated_assessment: KycAssessmentResponse;
+}
+
 // --- B3 FAQ TYPES ---
 
 export interface FaqItem {

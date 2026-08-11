@@ -142,6 +142,16 @@ class KycAssessmentResponse(BaseModel):
     documents_checklist: List[str]
     citations: List[CitationEvidence]
 
+class KycVerifyDocumentRequest(BaseModel):
+    document_type: str
+    document_number: str
+    notes: Optional[str] = None
+
+class KycVerifyDocumentResponse(BaseModel):
+    success: bool
+    message: str
+    updated_assessment: KycAssessmentResponse
+
 # --- B3 FAQ SCHEMAS ---
 
 class FaqItem(BaseModel):

@@ -1,34 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, ShieldAlert, CheckCircle2, XCircle, AlertTriangle, FileText, ArrowRight, RefreshCw, CheckSquare } from 'lucide-react';
-import type { KycAssessmentResponse } from '../types';
-import { fetchCustomerKyc } from '../api';
+import { UserCheck, ShieldAlert, CheckCircle2, XCircle, AlertTriangle, FileText, ArrowRight, RefreshCw, CheckSquare, Upload, X, Database } from 'lucide-react';
+import type { KycAssessmentResponse, KycVerifyDocumentRequest } from '../types';
+import { fetchCustomerKyc, verifyCustomerKycDocument } from '../api';
 
 interface KYCAssistantProps {
   customerId: number | null;
   onOpenEvidence: () => void;
+  onKycUpdated?: () => void;
 }
 
-export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEvidence }) => {
+export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEvidence, onKycUpdated }) => {
   const [kycData, setKycData] = useState<KycAssessmentResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Modal State
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [docType, setDocType] = useState<string>('Government Issued ID (PAN/Aadhaar)');
+  const [docNumber, setDocNumber] = useState<string>('');
+  const [docNotes, setDocNotes] = useState<string>('');
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     if (!customerId) return;
-    async function loadKyc() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchCustomerKyc(customerId!);
-        setKycData(data);
-      } catch (err: any) {
-        setError(`Failed to load KYC Assessment for Customer #${customerId}`);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadKyc();
   }, [customerId]);
+
+  async function loadKyc() {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchCustomerKyc(customerId!);
+      setKycData(data);
+    } catch (err: any) {
+      setError(`Failed to load KYC Assessment for Customer #${customerId}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerId || !docNumber.trim()) return;
+
+    try {
+      setSubmitting(true);
+      setError(null);
+      const req: KycVerifyDocumentRequest = {
+        document_type: docType,
+        document_number: docNumber.trim(),
+        notes: docNotes.trim() || undefined
+      };
+
+      const res = await verifyCustomerKycDocument(customerId, req);
+      setKycData(res.updated_assessment);
+      setSuccessMsg(res.message);
+      setShowModal(false);
+      setDocNumber('');
+      setDocNotes('');
+
+      if (onKycUpdated) onKycUpdated();
+    } catch (err: any) {
+      setError(err.message || 'Document verification failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!customerId) {
     return (
@@ -74,6 +112,19 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
 
   return (
     <div className="space-y-6">
+      {/* Dynamic Success Alert Banner */}
+      {successMsg && (
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between font-mono animate-fade-in">
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} className="text-gray-400 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* 1. Header Banner */}
       <div className="glass-panel p-6 rounded-2xl relative overflow-hidden space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
@@ -82,23 +133,36 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
               <UserCheck className="w-7 h-7" />
             </div>
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h2 className="text-2xl font-bold text-white tracking-tight">{kycData.name_1}</h2>
                 {getStatusBadge(overall_status)}
               </div>
               <p className="text-xs text-gray-400 mt-1 font-mono">
-                Customer ID: {kycData.customer_id} • Configuration-Driven Rule Engine
+                Customer ID: {kycData.customer_id} • Persistent DuckDB Rule Engine
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onOpenEvidence}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-xl text-blue-300 text-xs font-semibold transition-all"
-          >
-            <FileText className="w-4 h-4" />
-            <span>Verify Source Field Evidence ({kycData.citations.length})</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Interactive Document Verification Trigger Button */}
+            {overall_status !== 'COMPLETE' && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-900/30 transition-all ring-2 ring-emerald-400/30"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Verify Required Document</span>
+              </button>
+            )}
+
+            <button
+              onClick={onOpenEvidence}
+              className="flex items-center gap-2 px-3.5 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-xl text-gray-300 text-xs font-semibold transition-all"
+            >
+              <FileText className="w-4 h-4 text-blue-400" />
+              <span>Citations ({kycData.citations.length})</span>
+            </button>
+          </div>
         </div>
 
         {/* Completeness Bar */}
@@ -179,27 +243,139 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
 
         {/* Required Documents Suggestions */}
         <div className="glass-panel p-5 rounded-2xl border border-gray-800 space-y-4">
-          <div className="flex items-center space-x-2 text-amber-400">
-            <CheckSquare className="w-5 h-5" />
-            <h3 className="text-base font-bold text-white">Suggested Documents Checklist</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-amber-400">
+              <CheckSquare className="w-5 h-5" />
+              <h3 className="text-base font-bold text-white">Required Documents Checklist</h3>
+            </div>
+            {overall_status !== 'COMPLETE' && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="text-xs text-emerald-400 hover:text-emerald-300 font-mono underline"
+              >
+                + Verify Document
+              </button>
+            )}
           </div>
 
           <div className="space-y-2 text-xs">
             {documents_checklist.length === 0 ? (
-              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs">
-                ✓ All required KYC documents are verified on file. No additional documents needed.
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>All required KYC documents are verified on file. No additional documents needed.</span>
               </div>
             ) : (
               documents_checklist.map((doc, i) => (
                 <div key={i} className="p-2.5 rounded-lg bg-gray-900/60 border border-gray-800 text-gray-300 font-mono flex items-center justify-between">
                   <span>📄 {doc}</span>
-                  <span className="text-amber-400 text-[10px] font-semibold bg-amber-500/10 px-2 py-0.5 rounded">REQUIRED</span>
+                  <button
+                    onClick={() => {
+                      setDocType(doc);
+                      setShowModal(true);
+                    }}
+                    className="text-amber-400 hover:text-amber-300 text-[10px] font-semibold bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded border border-amber-500/30 transition-colors"
+                  >
+                    VERIFY NOW →
+                  </button>
                 </div>
               ))
             )}
           </div>
         </div>
       </div>
+
+      {/* 4. Interactive Document Verification Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-panel max-w-md w-full p-6 rounded-2xl border border-gray-700 space-y-5 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Verify KYC Document</h3>
+                  <p className="text-xs text-gray-400 font-mono">Dynamic DuckDB Database Mutation</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1 text-gray-400 hover:text-white rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleVerifySubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-gray-300 font-semibold mb-1">Target Document Type:</label>
+                <select
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value)}
+                  className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 focus:outline-none focus:border-emerald-500 font-mono"
+                >
+                  <option value="Government Issued ID (PAN/Aadhaar)">Government Issued ID (PAN/Aadhaar)</option>
+                  <option value="Utility Bill / Address Proof">Utility Bill / Address Proof</option>
+                  <option value="FATCA / CRS Declaration Form">FATCA / CRS Declaration Form</option>
+                  <option value="Salary Slips (3 months) / Income Tax Return">Salary Slips (3 months) / Income Tax Return</option>
+                  <option value="KYC Refresh Form / Re-KYC Declaration">KYC Refresh Form / Re-KYC Declaration</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 font-semibold mb-1">Document Reference / ID Number:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. PAN-RSHARMA-2026-X or DOC-994812"
+                  value={docNumber}
+                  onChange={(e) => setDocNumber(e.target.value)}
+                  className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 font-semibold mb-1">Verification Notes (Optional):</label>
+                <textarea
+                  rows={2}
+                  placeholder="Add officer verification notes..."
+                  value={docNotes}
+                  onChange={(e) => setDocNotes(e.target.value)}
+                  className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-sans"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px] font-mono leading-relaxed">
+                ℹ️ Submitting this verification executes a real-time SQL UPDATE statement on DuckDB table <code>customers</code>: <code>SET kyc_status = 'COMPLETE'</code>.
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || !docNumber.trim()}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-900/30 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {submitting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Updating DB...</span>
+                    </>
+                  ) : (
+                    <span>Submit & Verify KYC</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
