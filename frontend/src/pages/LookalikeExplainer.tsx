@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, AlertTriangle, CheckCircle2, FileText, 
-  ArrowRight, ShieldAlert, Sparkles, User, Layers
+  ArrowRight, ShieldAlert, Sparkles, User, Landmark
 } from 'lucide-react';
 import type { LookalikeResponse, LookalikeMatchItem } from '../types';
 import { fetchCustomerLookalikes } from '../api';
@@ -26,7 +26,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
         setSelectedMatch(res.lookalikes[0]);
       }
     } catch (err: any) {
-      setError(err.message || `Failed to calculate lookalikes for Customer #${cid}`);
+      setError(err.message || `Failed to calculate portfolio matches for Customer #${cid}`);
     }
   }, []);
 
@@ -39,8 +39,8 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
   if (!customerId) {
     return (
       <div className="card-modern p-12 text-center space-y-3 font-mono">
-        <Layers className="w-12 h-12 text-blue-600 mx-auto opacity-50" />
-        <p className="text-slate-500 text-sm">Please select a customer from the top menu bar to view lookalike portfolio risk analysis.</p>
+        <Landmark className="w-12 h-12 text-blue-600 mx-auto opacity-50" />
+        <p className="text-slate-500 text-sm">Please select a customer from the top menu bar to view portfolio risk and peer similarity analysis.</p>
       </div>
     );
   }
@@ -56,13 +56,13 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">Lookalike Portfolio Risk Engine</h2>
+                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">ITSS Portfolio Risk & Similarity Analytics</h2>
                 <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
                   Target Customer #{customerId} ({data?.target_customer_name || 'Loading...'})
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-1 font-mono">
-                Multi-Vector Cosine Similarity • Explainable "Why Similar" & Caution Risk Mismatches
+                Peer Portfolio Benchmark Analysis • Financial Similarity & Credit Risk Insights
               </p>
             </div>
           </div>
@@ -73,7 +73,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
               className="flex items-center space-x-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-mono font-bold transition-all shadow-sm"
             >
               <FileText className="w-4 h-4 text-blue-600" />
-              <span>Evidence Drawer ({data?.citations?.length || 0})</span>
+              <span>Citations ({data?.citations?.length || 0})</span>
             </button>
           </div>
         </div>
@@ -95,9 +95,9 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
             <div className="flex items-center justify-between px-1">
               <span className="text-xs font-mono font-bold text-slate-700 flex items-center gap-1.5 uppercase">
                 <Sparkles className="w-4 h-4 text-blue-600" />
-                Top 5 Similar Customers:
+                Top Peer Portfolio Matches:
               </span>
-              <span className="text-[11px] text-slate-500 font-mono">Vector Ranked</span>
+              <span className="text-[11px] text-slate-500 font-mono">Benchmark Ranked</span>
             </div>
 
             <div className="space-y-2.5">
@@ -128,7 +128,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
                       <span className={`px-2.5 py-1 rounded-full font-mono font-black text-xs ${
                         isSelected ? 'bg-white text-blue-700' : 'bg-blue-600 text-white'
                       }`}>
-                        {item.similarity_pct}% Match
+                        {item.similarity_pct}% Correlation
                       </span>
                     </div>
 
@@ -153,9 +153,9 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
                     <User className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-display font-extrabold text-slate-900">Lookalike Customer Breakdown</h3>
+                    <h3 className="text-lg font-display font-extrabold text-slate-900">Peer Portfolio Comparison</h3>
                     <p className="text-xs text-slate-500 font-mono">
-                      Comparing Target Customer #{customerId} vs Lookalike #{selectedMatch.customer_id} ({selectedMatch.name_1})
+                      Comparing Target Customer #{customerId} vs Peer #{selectedMatch.customer_id} ({selectedMatch.name_1})
                     </p>
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
                   onClick={() => onSelectCustomer(selectedMatch.customer_id)}
                   className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all text-xs font-mono font-bold flex items-center gap-1.5 shadow-md"
                 >
-                  <span>Inspect Customer 360</span>
+                  <span>Inspect Profile</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -196,7 +196,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
               <div className="space-y-3">
                 <h4 className="text-xs font-mono font-bold text-emerald-700 flex items-center gap-1.5 uppercase">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Why Similar? (Matching Feature Checklist)
+                  Key Financial Similarities (Matching Portfolio Factors)
                 </h4>
                 <div className="space-y-2 text-xs font-mono">
                   {selectedMatch.matching_features.map((mf: string, idx: number) => (
@@ -212,7 +212,7 @@ export const LookalikeExplainer: React.FC<LookalikeExplainerProps> = ({ customer
               <div className="space-y-3 pt-2">
                 <h4 className="text-xs font-mono font-bold text-amber-800 flex items-center gap-1.5 uppercase">
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  Caution / Risk Discrepancies Callout
+                  Portfolio Risk Discrepancies Callout
                 </h4>
                 <div className="space-y-2 text-xs font-mono">
                   {selectedMatch.risk_discrepancies.map((rd: string, idx: number) => (

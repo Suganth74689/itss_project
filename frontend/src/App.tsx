@@ -13,11 +13,11 @@ import { Loader2, AlertCircle, RefreshCw, Layers } from 'lucide-react';
 
 export function App() {
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const savedUser = localStorage.getItem('nexus_user');
+    const savedUser = localStorage.getItem('itss_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('nexus_token');
+    return localStorage.getItem('itss_token');
   });
 
   const [activeModule, setActiveModule] = useState<ModuleType>('b1-customer360');
@@ -36,13 +36,13 @@ export function App() {
       getCurrentUser(token)
         .then((userData) => {
           setUser(userData);
-          localStorage.setItem('nexus_user', JSON.stringify(userData));
+          localStorage.setItem('itss_user', JSON.stringify(userData));
         })
         .catch(() => {
           setToken(null);
           setUser(null);
-          localStorage.removeItem('nexus_token');
-          localStorage.removeItem('nexus_user');
+          localStorage.removeItem('itss_token');
+          localStorage.removeItem('itss_user');
         });
     }
   }, [token, user]);
@@ -50,8 +50,8 @@ export function App() {
   const handleLoginSuccess = (loggedInUser: AuthUser, authToken: string) => {
     setUser(loggedInUser);
     setToken(authToken);
-    localStorage.setItem('nexus_user', JSON.stringify(loggedInUser));
-    localStorage.setItem('nexus_token', authToken);
+    localStorage.setItem('itss_user', JSON.stringify(loggedInUser));
+    localStorage.setItem('itss_token', authToken);
   };
 
   const handleLogout = async () => {
@@ -60,8 +60,8 @@ export function App() {
     }
     setUser(null);
     setToken(null);
-    localStorage.removeItem('nexus_user');
-    localStorage.removeItem('nexus_token');
+    localStorage.removeItem('itss_user');
+    localStorage.removeItem('itss_token');
   };
 
   const loadCustomers = useCallback(async () => {
@@ -72,7 +72,7 @@ export function App() {
         setSelectedCustomerId(list[0].customer_id);
       }
     } catch (err: any) {
-      setError('Failed to connect to DuckDB Backend API');
+      setError('Failed to connect to ITSS Bank Backend System');
     }
   }, [selectedCustomerId]);
 
@@ -83,7 +83,7 @@ export function App() {
       const data = await fetchCustomer360(id);
       setC360Data(data);
     } catch (err: any) {
-      setError(`Failed to load data for Customer ID ${id}`);
+      setError(`Failed to load records for Customer ID ${id}`);
     } finally {
       setLoading360(false);
     }
@@ -142,7 +142,7 @@ export function App() {
           <div className="flex items-center justify-between bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-sm">
             <div className="flex items-center space-x-2 text-xs text-slate-600 font-mono">
               <Layers className="w-4 h-4 text-blue-600" />
-              <span className="font-bold text-slate-900">Quick Interview Sample Customers:</span>
+              <span className="font-bold text-slate-900">Select Customer Portfolio:</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {featuredCustomers.map((id) => (
@@ -165,7 +165,7 @@ export function App() {
           {loading360 && (
             <div className="card-modern p-12 flex flex-col items-center justify-center space-y-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-              <p className="text-sm text-slate-600 font-mono font-semibold">Querying DuckDB database for Customer #{selectedCustomerId}...</p>
+              <p className="text-sm text-slate-600 font-mono font-semibold">Retrieving ITSS Bank records for Customer #{selectedCustomerId}...</p>
             </div>
           )}
 

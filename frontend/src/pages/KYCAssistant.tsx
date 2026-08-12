@@ -41,7 +41,7 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
       setVerifying(true);
       const res = await verifyCustomerKycDocument(customerId, {
         document_type: verifyingDoc,
-        document_number: docNumber.trim() || `DOC-NEXUS-${Date.now()}`
+        document_number: docNumber.trim() || `DOC-ITSS-${Date.now()}`
       });
 
       if (res.success && res.updated_assessment) {
@@ -78,13 +78,13 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">e-KYC Compliance Engine</h2>
+                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">ITSS e-KYC & Compliance Verification</h2>
                 <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
                   Customer ID: #{customerId}
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-1 font-mono">
-                Configuration-Driven Regulatory Rules • Dynamic Document Verification Engine
+                Regulatory Compliance Verification System • Official Identity Audit
               </p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
               className="flex items-center space-x-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-mono font-bold transition-all shadow-sm"
             >
               <FileText className="w-4 h-4 text-blue-600" />
-              <span>Evidence Drawer ({assessment?.citations?.length || 0})</span>
+              <span>Citations ({assessment?.citations?.length || 0})</span>
             </button>
           </div>
         </div>
@@ -105,7 +105,7 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
           <div className="pt-2 border-t border-slate-200 space-y-2">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-slate-700 font-bold flex items-center gap-2">
-                Overall e-KYC Completeness: 
+                Overall e-KYC Verification: 
                 <span className="text-blue-600 font-black">{assessment.completeness_percentage}%</span>
               </span>
               <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold ${
@@ -177,7 +177,7 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
                 disabled={verifying}
                 className="px-5 py-2 rounded-xl text-xs font-mono font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-md flex items-center gap-1.5"
               >
-                {verifying ? 'Verifying in DuckDB...' : 'Confirm Verification & Update DB'}
+                {verifying ? 'Updating Records...' : 'Confirm Verification & Save'}
               </button>
             </div>
           </form>
@@ -192,9 +192,9 @@ export const KYCAssistant: React.FC<KYCAssistantProps> = ({ customerId, onOpenEv
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <h3 className="text-base font-display font-extrabold text-slate-900 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-600" />
-                e-KYC Master Field Compliance Status
+                e-KYC Mandatory Field Compliance Status
               </h3>
-              <span className="text-xs text-slate-500 font-mono">kyc_rules.json</span>
+              <span className="text-xs text-slate-500 font-mono">Regulatory Verification</span>
             </div>
 
             <div className="space-y-2.5">

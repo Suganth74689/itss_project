@@ -98,7 +98,7 @@ export const Customer360: React.FC<Customer360Props> = ({ data, onOpenEvidence, 
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1 hover:border-slate-300 transition-all">
-            <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">Suspicious Txn Alerts</span>
+            <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">Monitoring Alerts</span>
             <p className={`text-xl font-mono font-black ${suspicious_txn_count > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
               {suspicious_txn_count} Flags
             </p>
@@ -118,7 +118,7 @@ export const Customer360: React.FC<Customer360Props> = ({ data, onOpenEvidence, 
               </div>
               <div>
                 <h3 className="text-base font-display font-extrabold text-slate-900">Deposit & Savings Accounts</h3>
-                <p className="text-xs text-slate-500 font-mono">accounts.csv ({accounts.length} records)</p>
+                <p className="text-xs text-slate-500 font-mono">Verified Bank Records ({accounts.length} Accounts)</p>
               </div>
             </div>
           </div>
@@ -157,7 +157,7 @@ export const Customer360: React.FC<Customer360Props> = ({ data, onOpenEvidence, 
               </div>
               <div>
                 <h3 className="text-base font-display font-extrabold text-slate-900">Loan Accounts & Credit Exposure</h3>
-                <p className="text-xs text-slate-500 font-mono">loans.csv ({loans.length} records)</p>
+                <p className="text-xs text-slate-500 font-mono">Verified Credit Records ({loans.length} Loans)</p>
               </div>
             </div>
           </div>
@@ -203,7 +203,7 @@ export const Customer360: React.FC<Customer360Props> = ({ data, onOpenEvidence, 
             </div>
             <div>
               <h3 className="text-base font-display font-extrabold text-slate-900">Recent Transactions & Monitoring Alerts</h3>
-              <p className="text-xs text-slate-500 font-mono">transactions.csv ({transactions.length} total records)</p>
+              <p className="text-xs text-slate-500 font-mono">Transaction Activity Log ({transactions.length} Total Records)</p>
             </div>
           </div>
         </div>

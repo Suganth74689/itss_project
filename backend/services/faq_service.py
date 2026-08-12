@@ -77,7 +77,7 @@ class FaqService:
                         url=OLLAMA_API_BASE,
                         active_models=models,
                         default_model=default_m,
-                        message=f"Ollama Local LLM server active on port 11434 ({len(models)} local model(s) available)."
+                        message=f"ITSS Smart AI Assistant Active ({len(models)} model(s) available)."
                     )
         except Exception:
             pass
@@ -87,7 +87,7 @@ class FaqService:
             url=OLLAMA_API_BASE,
             active_models=[],
             default_model=None,
-            message="Ollama server offline on 127.0.0.1:11434. Seamless fallback active using DuckDB RAG Engine."
+            message="ITSS Banking System Online."
         )
 
     @classmethod
@@ -97,11 +97,11 @@ class FaqService:
         Grounded strictly in DuckDB banking context.
         """
         prompt = (
-            f"You are an AI Banking Intelligence Assistant. Answer the user's question directly, accurately, and thoroughly using ONLY the provided verified banking context database records.\n\n"
+            f"You are the ITSS Bank Virtual Intelligence Assistant. Answer the user's question directly, accurately, and thoroughly using ONLY the provided verified ITSS Bank context records.\n\n"
             f"Context Data:\n{context_facts}\n\n"
             f"User Question: {user_question}\n\n"
             f"Instructions:\n"
-            f"1. Answer the exact question asked by extracting all relevant facts (e.g. addresses, balances, counts, account numbers, interest rates, credit scores, transaction details, KYC status) from the database context.\n"
+            f"1. Answer the exact question asked by extracting all relevant facts (e.g. addresses, balances, counts, account numbers, interest rates, credit scores, transaction details, KYC status) from the bank records.\n"
             f"2. Be professional, clear, and precise with all facts and numbers.\n"
             f"3. Do not invent facts outside the provided context."
         )
@@ -137,7 +137,7 @@ class FaqService:
 
         lines = [
             f"========================================================================",
-            f"COMPLETE DATABASE PROFILE REPORT FOR CUSTOMER #{c.customer_id} ({c.name_1})",
+            f"ITSS BANK COMPLETE PROFILE REPORT FOR CUSTOMER #{c.customer_id} ({c.name_1})",
             f"========================================================================",
             f"1️⃣ PERSONAL PROFILE & MASTER IDENTITY:",
             f"• Full Name: {c.name_1}",
@@ -188,12 +188,12 @@ class FaqService:
         lines.append(f"\n4️⃣ RECENT TRANSACTIONS ({len(c360.transactions)} Recorded Txns):")
         if c360.transactions:
             for idx, txn in enumerate(c360.transactions[:10], 1):
-                susp_flag = " 🚩 [SUSPICIOUS ALERT]" if txn.is_suspicious == 'Y' else ""
+                susp_flag = " 🚩 [MONITORING ALERT]" if txn.is_suspicious == 'Y' else ""
                 lines.append(
                     f"  {idx}. Txn #{txn.txn_id} on {txn.txn_date}: ₹{abs(txn.amount):,.2f} ({txn.txn_type}) via {txn.channel or 'ATM/Online'}{susp_flag}\n"
                     f"     • Counterparty: {txn.counterparty or 'N/A'} | Narrative: {txn.narrative or 'N/A'}"
                 )
-            lines.append(f"• Total Suspicious Transaction Alerts: {c360.suspicious_txn_count} Alert(s)")
+            lines.append(f"• Total Transaction Monitoring Alerts: {c360.suspicious_txn_count} Alert(s)")
         else:
             lines.append("  • No transactions recorded.")
 
@@ -249,7 +249,7 @@ class FaqService:
         ollama_avail = ollama_status.available
         target_model = req.preferred_model or ollama_status.default_model or "llama3"
 
-        # 1. STRICT OUT-OF-SCOPE GUARDRAIL CHECK
+        # 1. OUT-OF-SCOPE SECURITY POLICY CHECK
         for trigger in NON_BANKING_TRIGGERS:
             if trigger in q_lower:
                 return FaqQueryResponse(
@@ -260,16 +260,16 @@ class FaqService:
                     answer=None,
                     confidence_score="REFUSED",
                     similarity_score=0.0,
-                    explanation=f"Out-of-scope query detected matching prohibited trigger '{trigger}'.",
-                    refusal_reason="This assistant is strictly restricted to banking policies, customer account 360 data, KYC compliance, and loan inquiries. Non-banking topics (sports, entertainment, coding, politics) are strictly prohibited.",
+                    explanation="Query is outside ITSS Bank authorized banking scope.",
+                    refusal_reason="I am your ITSS Bank Virtual Assistant. I can assist you with your ITSS Bank accounts, balances, loans, and official banking services. For security and privacy, I am restricted to banking inquiries.",
                     suggested_related_faqs=faqs[:2],
                     citations=[],
-                    llm_provider="Refusal Guardrail",
+                    llm_provider="ITSS Security Policy",
                     ollama_available=ollama_avail,
                     ollama_model=target_model if ollama_avail else None
                 )
 
-        # 1.5. STRICT SQL QUERY GUARDRAIL (UNCONDITIONAL REFUSAL)
+        # 1.5. SYSTEM COMMAND GUARDRAIL
         is_sql = bool(re.search(
             r'\b(select|insert|update|delete|drop|create|alter|show|truncate)\b',
             q_lower
@@ -286,11 +286,11 @@ class FaqService:
                 answer=None,
                 confidence_score="REFUSED",
                 similarity_score=0.0,
-                explanation="Raw SQL syntax detected in input prompt. Direct SQL execution is blocked by safety guardrails.",
-                refusal_reason="Direct SQL query execution is strictly prohibited for security and zero-hallucination policy enforcement. This assistant only accepts natural language questions related to customer information (e.g. 'Show all details for Customer 100106') and verified banking policies.",
+                explanation="System command syntax detected in input.",
+                refusal_reason="Direct database commands are restricted for security. Please ask any natural language question about your ITSS Bank accounts or banking services.",
                 suggested_related_faqs=faqs[:3],
                 citations=[],
-                llm_provider="Refusal Guardrail",
+                llm_provider="ITSS Security Policy",
                 ollama_available=ollama_avail,
                 ollama_model=target_model if ollama_avail else None
             )
@@ -306,8 +306,8 @@ class FaqService:
                     cid_info = f" (Customer #{req.customer_id})"
 
             greeting_ans = (
-                f"Hello{cust_name}! I am your Banking Intelligence RAG Assistant{cid_info}.\n\n"
-                f"You can ask me questions such as:\n"
+                f"Hello{cust_name}! I am your ITSS Bank Virtual Assistant{cid_info}.\n\n"
+                f"How may I assist you today? You can ask me questions such as:\n"
                 f"• 'What is my total working balance?'\n"
                 f"• 'How many loan accounts do I have?'\n"
                 f"• 'What is my address and monthly income?'\n"
@@ -325,15 +325,15 @@ class FaqService:
                 matched_faq=None,
                 confidence_score="HIGH",
                 similarity_score=1.0,
-                explanation="Assistant greeting and capabilities guide.",
+                explanation="ITSS Bank Virtual Assistant greeting and capabilities guide.",
                 suggested_related_faqs=faqs[:3],
                 citations=[],
-                llm_provider="Ollama Assistant" if ollama_avail else "DuckDB-RAG Engine",
+                llm_provider="ITSS Smart AI Assistant" if ollama_avail else "ITSS Banking System",
                 ollama_available=ollama_avail,
                 ollama_model=target_model if ollama_avail else None
             )
 
-        # 3. CHECK CUSTOMER-SPECIFIC RAG INTENT
+        # 3. CHECK CUSTOMER-SPECIFIC INTENT
         extracted_id = req.customer_id
         match_id = re.search(r'\b100\d{3}\b', q_lower)
         if match_id:
@@ -435,9 +435,9 @@ class FaqService:
                     if any(kw in q_lower for kw in ["txn", "transaction", "transactions", "suspicious", "alert", "alerts"]):
                         matched_any_specific = True
                         ans_parts.append(f"• Total Recorded Transactions: {len(c360.transactions)}")
-                        ans_parts.append(f"• Suspicious Transaction Alerts: {c360.suspicious_txn_count} Alert(s)")
+                        ans_parts.append(f"• Transaction Monitoring Alerts: {c360.suspicious_txn_count} Alert(s)")
                         for t in c360.transactions[:5]:
-                            flag = " 🚩 [SUSPICIOUS]" if t.is_suspicious == 'Y' else ""
+                            flag = " 🚩 [MONITORING ALERT]" if t.is_suspicious == 'Y' else ""
                             ans_parts.append(f"  - Txn #{t.txn_id} on {t.txn_date}: ₹{abs(t.amount):,.2f} ({t.txn_type}){flag} - {t.narrative or 'N/A'}")
                             if t.is_suspicious == 'Y':
                                 rag_citations.append(CitationEvidence(
@@ -476,13 +476,13 @@ class FaqService:
                             CitationEvidence(table="customers.csv", record_id=str(c.customer_id), field_name="customer_id", value=str(c.customer_id), description=f"Customer master record for {c.name_1}")
                         ]
 
-                provider = "DuckDB-RAG Engine"
+                provider = "ITSS Core Banking System"
                 if ollama_avail:
                     # Provide 100% full database facts report to Ollama for complete prompt grounding!
                     ollama_gen = cls.generate_ollama_completion(q_raw, full_report_text, target_model)
                     if ollama_gen:
                         final_ans = ollama_gen
-                        provider = f"Ollama Local LLM ({target_model})"
+                        provider = "ITSS Smart AI Assistant"
                         if not rag_citations:
                             rag_citations = full_citations
 
@@ -496,7 +496,7 @@ class FaqService:
                     matched_faq=None,
                     confidence_score="HIGH",
                     similarity_score=0.98,
-                    explanation=f"Retrieved complete Customer 360 database facts for {c.name_1} (ID #{c.customer_id}) from DuckDB; synthesized via {provider}.",
+                    explanation=f"Retrieved verified ITSS Bank records for {c.name_1} (ID #{c.customer_id}).",
                     suggested_related_faqs=faqs[:2],
                     citations=rag_citations,
                     llm_provider=provider,
@@ -504,7 +504,7 @@ class FaqService:
                     ollama_model=target_model if ollama_avail else None
                 )
 
-        # 4. GENERAL BANKING POLICY RAG SEARCH
+        # 4. GENERAL BANKING POLICY SEARCH
         best_faq: Optional[FaqItem] = None
         highest_score = 0.0
 
@@ -530,13 +530,13 @@ class FaqService:
             related = [f for f in faqs if f.id in best_faq.related_faqs or (f.category == best_faq.category and f.id != best_faq.id)]
             
             final_ans = best_faq.answer
-            provider = "DuckDB Policy RAG"
+            provider = "ITSS Bank Policy Services"
             if ollama_avail:
                 context_str = f"Official Bank Policy FAQ ({best_faq.category}): {best_faq.question}\nOfficial Answer: {best_faq.answer}"
                 ollama_gen = cls.generate_ollama_completion(q_raw, context_str, target_model)
                 if ollama_gen:
                     final_ans = ollama_gen
-                    provider = f"Ollama Local LLM ({target_model})"
+                    provider = "ITSS Smart AI Assistant"
 
             return FaqQueryResponse(
                 status="MATCHED",
@@ -547,7 +547,7 @@ class FaqService:
                 matched_faq=best_faq,
                 confidence_score=confidence,
                 similarity_score=round(min(highest_score, 1.0), 3),
-                explanation=f"Matched Banking Policy FAQ '{best_faq.question}' ({best_faq.category}) with {confidence} confidence.",
+                explanation=f"Matched ITSS Banking Policy '{best_faq.question}' ({best_faq.category}).",
                 suggested_related_faqs=related[:3],
                 citations=[
                     CitationEvidence(
@@ -555,7 +555,7 @@ class FaqService:
                         record_id=best_faq.id,
                         field_name="question",
                         value=best_faq.question,
-                        description=f"Matched Banking Knowledge Base record ({best_faq.category})"
+                        description=f"Official ITSS Bank Policy record ({best_faq.category})"
                     )
                 ],
                 llm_provider=provider,
@@ -563,7 +563,7 @@ class FaqService:
                 ollama_model=target_model if ollama_avail else None
             )
 
-        # 5. REFUSAL FOR UNMATCHED OR UNCLEAR PROMPTS
+        # 5. REFUSAL FOR UNMATCHED PROMPTS
         return FaqQueryResponse(
             status="REFUSED",
             query_type="REFUSED",
@@ -572,11 +572,11 @@ class FaqService:
             answer=None,
             confidence_score="REFUSED",
             similarity_score=round(highest_score, 3),
-            explanation="The prompt could not be matched with high confidence to any verified banking policy or customer profile.",
-            refusal_reason="I can only assist with verified banking policies (loans, credit cards, net banking) or your specific customer account 360 profile. Please rephrase your question or select a valid customer.",
+            explanation="The prompt could not be matched to any verified ITSS Bank service or profile.",
+            refusal_reason="I am your ITSS Bank Virtual Assistant. I can assist you with verified ITSS Bank policies, account information, or loan services. Please rephrase your question or select a valid customer.",
             suggested_related_faqs=faqs[:3],
             citations=[],
-            llm_provider="Refusal Guardrail",
+            llm_provider="ITSS Security Policy",
             ollama_available=ollama_avail,
             ollama_model=target_model if ollama_avail else None
         )
