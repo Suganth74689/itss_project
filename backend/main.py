@@ -10,12 +10,14 @@ from schemas import (
     CustomerBasicInfo, Customer360Response, AccountItem, LoanItem,
     TransactionItem, LoanApplicationItem, LimitCollateralItem,
     KycAssessmentResponse, KycVerifyDocumentRequest, KycVerifyDocumentResponse,
-    FaqItem, FaqQueryRequest, FaqQueryResponse, LookalikeResponse, OllamaStatusResponse
+    FaqItem, FaqQueryRequest, FaqQueryResponse, LookalikeResponse, OllamaStatusResponse,
+    LoginRequest, LoginResponse, UserResponse
 )
 from services.customer_service import CustomerService
 from services.kyc_service import KycService
 from services.faq_service import FaqService
 from services.similarity_service import CustomerSimilarityService
+from services.auth_service import AuthService
 
 app = FastAPI(
     title="Banking Intelligence Assistant API",
@@ -31,6 +33,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- AUTHENTICATION ENDPOINTS ---
+
+@app.post("/api/auth/login", response_model=LoginResponse)
+def login(req: LoginRequest):
+    res = AuthService.authenticate_user(req)
+    if not res.success:
+        raise HTTPException(status_code=401, detail=res.message)
+    return res
+
+@app.get("/api/auth/me", response_model=UserResponse)
+def get_current_user(token: str = Query(..., description="Active session token")):
+    user = AuthService.get_current_user(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired session token")
+    return user
+
+@app.post("/api/auth/logout")
+def logout(token: str = Query(..., description="Active session token")):
+    success = AuthService.logout_user(token)
+    return {"status": "success", "logged_out": success}
 
 # --- SYSTEM HEALTH & RESET ENDPOINTS ---
 

@@ -5,12 +5,21 @@ import { Customer360 } from './pages/Customer360';
 import { KYCAssistant } from './pages/KYCAssistant';
 import { FAQAssistant } from './pages/FAQAssistant';
 import { LookalikeExplainer } from './pages/LookalikeExplainer';
+import { LoginPage } from './pages/LoginPage';
 import { EvidenceDrawer } from './components/EvidenceDrawer';
-import { fetchCustomers, fetchCustomer360 } from './api';
-import type { CustomerBasicInfo, Customer360Response } from './types';
+import { fetchCustomers, fetchCustomer360, getCurrentUser, logoutUser } from './api';
+import type { CustomerBasicInfo, Customer360Response, AuthUser } from './types';
 import { Loader2, AlertCircle, RefreshCw, Layers } from 'lucide-react';
 
 export function App() {
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const savedUser = localStorage.getItem('nexus_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem('nexus_token');
+  });
+
   const [activeModule, setActiveModule] = useState<ModuleType>('b1-customer360');
   const [customers, setCustomers] = useState<CustomerBasicInfo[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(100106);
@@ -20,6 +29,40 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   
   const [showEvidence, setShowEvidence] = useState<boolean>(false);
+
+  // Validate session token on mount
+  useEffect(() => {
+    if (token && !user) {
+      getCurrentUser(token)
+        .then((userData) => {
+          setUser(userData);
+          localStorage.setItem('nexus_user', JSON.stringify(userData));
+        })
+        .catch(() => {
+          setToken(null);
+          setUser(null);
+          localStorage.removeItem('nexus_token');
+          localStorage.removeItem('nexus_user');
+        });
+    }
+  }, [token, user]);
+
+  const handleLoginSuccess = (loggedInUser: AuthUser, authToken: string) => {
+    setUser(loggedInUser);
+    setToken(authToken);
+    localStorage.setItem('nexus_user', JSON.stringify(loggedInUser));
+    localStorage.setItem('nexus_token', authToken);
+  };
+
+  const handleLogout = async () => {
+    if (token) {
+      await logoutUser(token);
+    }
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('nexus_user');
+    localStorage.removeItem('nexus_token');
+  };
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -48,15 +91,17 @@ export function App() {
 
   // Load customer list on startup
   useEffect(() => {
-    loadCustomers();
-  }, [loadCustomers]);
+    if (user) {
+      loadCustomers();
+    }
+  }, [loadCustomers, user]);
 
   // Fetch Customer 360 profile whenever selected customer changes
   useEffect(() => {
-    if (selectedCustomerId) {
+    if (user && selectedCustomerId) {
       load360(selectedCustomerId);
     }
-  }, [selectedCustomerId, load360]);
+  }, [selectedCustomerId, load360, user]);
 
   // Handler when KYC document is verified dynamically
   const handleKycUpdated = () => {
@@ -68,6 +113,10 @@ export function App() {
 
   const featuredCustomers = [100106, 100100, 100101, 100102, 100103];
 
+  if (!user || !token) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans">
       {/* Top Header Navigation */}
@@ -78,6 +127,8 @@ export function App() {
         onToggleEvidence={() => setShowEvidence(!showEvidence)}
         showEvidence={showEvidence}
         citationCount={c360Data?.citations?.length || 0}
+        user={user}
+        onLogout={handleLogout}
       />
 
       {/* Main Workspace Body */}

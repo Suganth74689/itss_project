@@ -3,7 +3,7 @@ import re
 import urllib.request
 import urllib.error
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 from schemas import (
     FaqItem, FaqQueryRequest, FaqQueryResponse, CitationEvidence, OllamaStatusResponse
@@ -124,6 +124,112 @@ class FaqService:
         return None
 
     @classmethod
+    def build_complete_customer_report(cls, c360, kyc) -> Tuple[str, List[CitationEvidence]]:
+        """
+        Build an exhaustive 360° dataset report for a customer covering all 6 tables and KYC status.
+        """
+        c = c360.customer
+        lines = [
+            f"📊 COMPLETE CUSTOMER 360° DATASET REPORT FOR {c.name_1.upper()} (ID #{c.customer_id})",
+            "═" * 60,
+            f"\n1️⃣ CUSTOMER MASTER PROFILE:",
+            f"• Customer ID: #{c.customer_id}",
+            f"• Full Name: {c.name_1}",
+            f"• Short Name / Mnemonic: {c.short_name or 'N/A'} ({c.mnemonic or 'N/A'})",
+            f"• Date of Birth: {c.date_of_birth or 'N/A'}",
+            f"• Address / Location: {c.street or 'N/A'}, {c.town_country or 'N/A'}",
+            f"• Nationality & Residence: {c.nationality or 'N/A'} / {c.residence or 'N/A'}",
+            f"• Monthly Income: ₹{c.monthly_income:,.2f}",
+            f"• Employment Type: {c.employment_type or 'N/A'}",
+            f"• Assigned Account Officer ID: #{c.account_officer if c.account_officer else 'N/A'}",
+            f"• Customer Status Code: {c.customer_status if c.customer_status is not None else 'Active'}",
+            f"• Regulatory e-KYC Status: {c.kyc_status} ({kyc.completeness_percentage}% Verified)",
+            
+            f"\n2️⃣ DEPOSIT & SAVINGS ACCOUNTS ({len(c360.accounts)} Account(s)):",
+        ]
+
+        if c360.accounts:
+            for idx, acc in enumerate(c360.accounts, 1):
+                lines.append(
+                    f"  {idx}. Account ID #{acc.account_id} — {acc.account_title} ({acc.product or 'SAVINGS'})\n"
+                    f"     • Category: {acc.category} | Currency: {acc.currency} | Opened: {acc.opening_date or 'N/A'}\n"
+                    f"     • Working Balance: ₹{acc.working_balance:,.2f}\n"
+                    f"     • Posting Restrict: {acc.posting_restrict or 'None'}"
+                )
+            lines.append(f"• Total Aggregated Working Balance: ₹{c360.total_working_balance:,.2f}")
+        else:
+            lines.append("  • No active deposit accounts found.")
+
+        lines.append(f"\n3️⃣ LOAN ACCOUNTS & CREDIT FACILITIES ({len(c360.loans)} Loan(s)):")
+        if c360.loans:
+            for idx, ln in enumerate(c360.loans, 1):
+                lines.append(
+                    f"  {idx}. Loan ID #{ln.loan_id} — {ln.product} LOAN ({ln.status})\n"
+                    f"     • Sanctioned: ₹{ln.sanctioned_amount:,.2f} | Outstanding: ₹{ln.outstanding:,.2f}\n"
+                    f"     • Interest Rate: {ln.interest_rate}% p.a. | Tenure: {ln.tenure_months} Months\n"
+                    f"     • Start Date: {ln.start_date or 'N/A'} | Days Past Due (DPD Overdue): {ln.days_past_due} Days\n"
+                    f"     • Limit Amount: ₹{ln.limit_amount:,.2f} | Collateral Value: ₹{ln.collateral_value:,.2f}"
+                )
+            lines.append(f"• Total Sanctioned Loans: ₹{c360.total_sanctioned_loan:,.2f}")
+            lines.append(f"• Total Outstanding Loans: ₹{c360.total_outstanding_loan:,.2f}")
+            lines.append(f"• Max Days Past Due (DPD): {c360.max_days_past_due} Days Overdue")
+        else:
+            lines.append("  • No active loan accounts found.")
+
+        lines.append(f"\n4️⃣ RECENT TRANSACTIONS ({len(c360.transactions)} Recorded Txns):")
+        if c360.transactions:
+            for idx, txn in enumerate(c360.transactions[:10], 1):
+                susp_flag = " 🚩 [SUSPICIOUS ALERT]" if txn.is_suspicious == 'Y' else ""
+                lines.append(
+                    f"  {idx}. Txn #{txn.txn_id} on {txn.txn_date}: ₹{abs(txn.amount):,.2f} ({txn.txn_type}) via {txn.channel or 'ATM/Online'}{susp_flag}\n"
+                    f"     • Counterparty: {txn.counterparty or 'N/A'} | Narrative: {txn.narrative or 'N/A'}"
+                )
+            lines.append(f"• Total Suspicious Transaction Alerts: {c360.suspicious_txn_count} Alert(s)")
+        else:
+            lines.append("  • No transactions recorded.")
+
+        lines.append(f"\n5️⃣ APPROVED CREDIT LIMITS & COLLATERAL ({len(c360.limits)} Record(s)):")
+        if c360.limits:
+            for idx, lim in enumerate(c360.limits, 1):
+                lines.append(
+                    f"  {idx}. Limit ID #{lim.limit_id or 'N/A'} ({lim.limit_product or 'CREDIT_FACILITY'})\n"
+                    f"     • Approved Limit: ₹{lim.approved_limit:,.2f} | Utilized: ₹{lim.utilized:,.2f} | Available: ₹{lim.available:,.2f}\n"
+                    f"     • Collateral ID: #{lim.collateral_id or 'N/A'} ({lim.collateral_type or 'N/A'}) — Value: ₹{lim.collateral_value:,.2f}"
+                )
+            lines.append(f"• Total Approved Limits: ₹{c360.total_approved_limit:,.2f}")
+            lines.append(f"• Total Utilized Limits: ₹{c360.total_utilized_limit:,.2f}")
+            lines.append(f"• Total Available Limits: ₹{c360.total_available_limit:,.2f}")
+        else:
+            lines.append("  • No credit limit/collateral records found.")
+
+        lines.append(f"\n6️⃣ LOAN APPLICATIONS HISTORY ({len(c360.applications)} Application(s)):")
+        if c360.applications:
+            for idx, app in enumerate(c360.applications, 1):
+                lines.append(
+                    f"  {idx}. Application ID #{app.application_id} ({app.product} Loan)\n"
+                    f"     • Requested Amount: ₹{app.requested_amount:,.2f} | Tenure: {app.tenure_months} Months\n"
+                    f"     • Applicant Credit Score: {app.credit_score} | Existing EMI: ₹{app.existing_emi:,.2f}\n"
+                    f"     • Purpose: {app.purpose or 'General'} | Decision: {app.decision_label}"
+                )
+        else:
+            lines.append("  • No loan application history found.")
+
+        lines.append(f"\n7️⃣ REGULATORY KYC COMPLIANCE ASSESSMENT:")
+        lines.append(f"• Overall KYC Status: {kyc.overall_status}")
+        lines.append(f"• Completeness Score: {kyc.completeness_percentage}% Verified")
+        lines.append(f"• Verified Information Fields: {len(kyc.fields) - len(kyc.missing_fields)} / {len(kyc.fields)}")
+        if kyc.missing_fields:
+            lines.append(f"• Missing Mandatory Items: {', '.join(kyc.missing_fields)}")
+        if kyc.recommended_actions:
+            lines.append(f"• Recommended Actions: {', '.join(kyc.recommended_actions)}")
+
+        all_citations = list(c360.citations)
+        if hasattr(kyc, 'citations') and kyc.citations:
+            all_citations.extend(kyc.citations)
+
+        return "\n".join(lines), all_citations
+
+    @classmethod
     def answer_faq(cls, req: FaqQueryRequest) -> FaqQueryResponse:
         faqs = cls.load_faqs()
         q_raw = req.question.strip()
@@ -153,6 +259,32 @@ class FaqService:
                     ollama_available=ollama_avail,
                     ollama_model=target_model if ollama_avail else None
                 )
+
+        # 1.5. STRICT SQL QUERY GUARDRAIL (UNCONDITIONAL REFUSAL)
+        is_sql = bool(re.search(
+            r'\b(select|insert|update|delete|drop|create|alter|show|truncate)\b',
+            q_lower
+        )) and (
+            'from' in q_lower or 'where' in q_lower or 'table' in q_lower or 'into' in q_lower or ';' in q_raw or 'select ' in q_lower
+        )
+
+        if is_sql:
+            return FaqQueryResponse(
+                status="REFUSED",
+                query_type="REFUSED",
+                user_question=q_raw,
+                customer_id=req.customer_id,
+                answer=None,
+                confidence_score="REFUSED",
+                similarity_score=0.0,
+                explanation="Raw SQL syntax detected in input prompt. Direct SQL execution is blocked by safety guardrails.",
+                refusal_reason="Direct SQL query execution is strictly prohibited for security and zero-hallucination policy enforcement. This assistant only accepts natural language questions related to customer information (e.g. 'Show all details for Customer 100106') and verified banking policies.",
+                suggested_related_faqs=faqs[:3],
+                citations=[],
+                llm_provider="Refusal Guardrail",
+                ollama_available=ollama_avail,
+                ollama_model=target_model if ollama_avail else None
+            )
 
         # 2. GREETING & GENERAL ASSISTANCE HELP INTENT
         if q_lower in GREETING_TRIGGERS or q_lower.startswith(("hi", "hello", "hey")):
@@ -215,75 +347,108 @@ class FaqService:
 
             if c360 and kyc:
                 c = c360.customer
-                ans_parts = [
-                    f"Hello {c.name_1} (Customer #{c.customer_id}). Here is your real-time account and loan summary from our DuckDB core banking engine:"
-                ]
 
-                # Specific Loan Account Count & Breakdown
-                if "loan" in q_lower or "loans" in q_lower or "dpd" in q_lower or "overdue" in q_lower or "emi" in q_lower:
-                    loan_count = len(c360.loans)
-                    if loan_count > 0:
-                        ans_parts.append(f"• Active Loan Accounts Count: Customer #{c.customer_id} ({c.name_1}) has exactly {loan_count} active loan account(s).")
-                        loan_details_list = []
-                        for idx, ln in enumerate(c360.loans, 1):
-                            loan_details_list.append(
-                                f"  {idx}. {ln.product} LOAN (Loan ID #{ln.loan_id}): Outstanding ₹{ln.outstanding:,.2f} of Sanctioned ₹{ln.sanctioned_amount:,.2f} @ {ln.interest_rate}% p.a., Status: {ln.status} ({ln.days_past_due} Days DPD Overdue)"
-                            )
-                        ans_parts.append("\n".join(loan_details_list))
-                        ans_parts.append(f"• Total Aggregated Outstanding Loan Balance: ₹{c360.total_outstanding_loan:,.2f} (Max Overdue: {c360.max_days_past_due} DPD).")
-                    else:
-                        ans_parts.append(f"• Active Loan Accounts Count: Customer #{c.customer_id} ({c.name_1}) has 0 active loan accounts.")
+                # Check if user explicitly asked for "all details" / "full profile" / "complete report"
+                is_full_report_requested = any(kw in q_lower for kw in [
+                    "all details", "all information", "all data", "full report",
+                    "full profile", "everything", "complete details", "complete report", "full dataset"
+                ])
 
-                # Account Balance Breakdown
-                if "balance" in q_lower or "account" in q_lower or "accounts" in q_lower:
-                    ans_parts.append(f"• Deposit & Savings Accounts Count: {len(c360.accounts)} active account(s).")
-                    acc_list = []
-                    for acc in c360.accounts:
-                        acc_list.append(f"  - {acc.account_title} (Acc #{acc.account_id}, {acc.product}): Working Balance ₹{acc.working_balance:,.2f} ({acc.currency})")
-                    ans_parts.append("\n".join(acc_list))
-                    ans_parts.append(f"• Total Aggregated Working Balance: ₹{c360.total_working_balance:,.2f}.")
+                if is_full_report_requested:
+                    report_text, citations = cls.build_complete_customer_report(c360, kyc)
+                    final_ans = report_text
+                    rag_citations = citations
+                else:
+                    ans_parts = [f"Verified information for {c.name_1} (Customer #{c.customer_id}):"]
+                    rag_citations: List[CitationEvidence] = []
+                    matched_any_specific = False
 
-                # KYC Status Breakdown
-                if "kyc" in q_lower or "status" in q_lower or "verified" in q_lower:
-                    ans_parts.append(f"• Regulatory e-KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified).")
+                    # 1. Specific Balance & Accounts Query
+                    if any(kw in q_lower for kw in ["balance", "working balance", "account", "accounts", "deposit"]):
+                        matched_any_specific = True
+                        ans_parts.append(f"• Total Aggregated Working Balance: ₹{c360.total_working_balance:,.2f}")
+                        ans_parts.append(f"• Active Deposit Accounts ({len(c360.accounts)}):")
+                        for acc in c360.accounts:
+                            ans_parts.append(f"  - Account #{acc.account_id} ({acc.account_title}, {acc.product or 'SAVINGS'}): Working Balance ₹{acc.working_balance:,.2f} {acc.currency}")
+                            rag_citations.append(CitationEvidence(
+                                table="accounts.csv", record_id=str(acc.account_id), field_name="working_balance",
+                                value=f"₹{acc.working_balance:,.2f}", description=f"Working balance for {acc.account_title}"
+                            ))
 
-                # Default Complete Context if generic
-                if len(ans_parts) == 1:
-                    ans_parts.append(f"• Total Active Loans: {len(c360.loans)} loan account(s) totaling ₹{c360.total_outstanding_loan:,.2f} outstanding.")
-                    ans_parts.append(f"• Total Active Deposit Accounts: {len(c360.accounts)} account(s) totaling ₹{c360.total_working_balance:,.2f} working balance.")
-                    ans_parts.append(f"• Regulatory KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified).")
+                    # 2. Specific Loans, EMI & Overdue DPD Query
+                    if any(kw in q_lower for kw in ["loan", "loans", "dpd", "overdue", "emi", "sanctioned", "outstanding"]):
+                        matched_any_specific = True
+                        ans_parts.append(f"• Active Loan Accounts Count: {len(c360.loans)} account(s)")
+                        if c360.loans:
+                            for idx, ln in enumerate(c360.loans, 1):
+                                ans_parts.append(f"  {idx}. Loan ID #{ln.loan_id} ({ln.product} Loan): Outstanding ₹{ln.outstanding:,.2f} of Sanctioned ₹{ln.sanctioned_amount:,.2f} @ {ln.interest_rate}% p.a. (Status: {ln.status}, {ln.days_past_due} Days DPD Overdue)")
+                                rag_citations.append(CitationEvidence(
+                                    table="loans.csv", record_id=ln.loan_id, field_name="outstanding",
+                                    value=f"₹{ln.outstanding:,.2f}", description=f"Outstanding principal on {ln.product} loan (Status: {ln.status}, DPD: {ln.days_past_due})"
+                                ))
+                            ans_parts.append(f"• Total Outstanding Loan Balance: ₹{c360.total_outstanding_loan:,.2f} (Max Overdue: {c360.max_days_past_due} Days DPD)")
+                        else:
+                            ans_parts.append("• Customer has 0 active loan accounts.")
 
-                deterministic_ans = "\n".join(ans_parts)
+                    # 3. Specific KYC Compliance Query
+                    if any(kw in q_lower for kw in ["kyc", "compliance", "verified", "status"]):
+                        matched_any_specific = True
+                        ans_parts.append(f"• Regulatory e-KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified)")
+                        if kyc.missing_fields:
+                            ans_parts.append(f"• Missing Mandatory Items: {', '.join(kyc.missing_fields)}")
+                        rag_citations.append(CitationEvidence(
+                            table="customers.csv", record_id=str(c.customer_id), field_name="kyc_status",
+                            value=kyc.overall_status, description=f"KYC compliance status for {c.name_1}"
+                        ))
 
-                rag_citations = [
-                    CitationEvidence(
-                        table="loans.csv",
-                        record_id=str(c.customer_id),
-                        field_name="loan_count",
-                        value=str(len(c360.loans)),
-                        description=f"Total active loan accounts count for {c.name_1}"
-                    ),
-                    CitationEvidence(
-                        table="loans.csv",
-                        record_id=str(c.customer_id),
-                        field_name="outstanding",
-                        value=f"₹{c360.total_outstanding_loan:,.2f}",
-                        description="Total aggregated loan outstanding balance"
-                    ),
-                    CitationEvidence(
-                        table="accounts.csv",
-                        record_id=str(c.customer_id),
-                        field_name="working_balance",
-                        value=f"₹{c360.total_working_balance:,.2f}",
-                        description="Total aggregated working balance"
-                    )
-                ]
+                    # 4. Specific Transactions / Suspicious Alerts Query
+                    if any(kw in q_lower for kw in ["txn", "transaction", "transactions", "suspicious", "alert", "alerts"]):
+                        matched_any_specific = True
+                        ans_parts.append(f"• Total Recorded Transactions: {len(c360.transactions)}")
+                        ans_parts.append(f"• Suspicious Transaction Alerts: {c360.suspicious_txn_count} Alert(s)")
+                        for t in c360.transactions[:5]:
+                            flag = " 🚩 [SUSPICIOUS]" if t.is_suspicious == 'Y' else ""
+                            ans_parts.append(f"  - Txn #{t.txn_id} on {t.txn_date}: ₹{abs(t.amount):,.2f} ({t.txn_type}){flag} - {t.narrative or 'N/A'}")
+                            if t.is_suspicious == 'Y':
+                                rag_citations.append(CitationEvidence(
+                                    table="transactions.csv", record_id=t.txn_id, field_name="is_suspicious",
+                                    value="Y", description=f"Suspicious transaction flag on {t.txn_date} ({t.narrative})"
+                                ))
 
-                # Synthesize with Ollama if available
-                final_ans = deterministic_ans
+                    # 5. Specific Credit Limits & Collateral Query
+                    if any(kw in q_lower for kw in ["limit", "limits", "credit limit", "collateral"]):
+                        matched_any_specific = True
+                        ans_parts.append(f"• Approved Credit Limit: ₹{c360.total_approved_limit:,.2f}")
+                        ans_parts.append(f"• Utilized Limit: ₹{c360.total_utilized_limit:,.2f} | Available Limit: ₹{c360.total_available_limit:,.2f}")
+                        for lim in c360.limits:
+                            if lim.collateral_type:
+                                ans_parts.append(f"  - Collateral ({lim.collateral_type}): ₹{lim.collateral_value:,.2f}")
+
+                    # 6. Specific Applications Query
+                    if any(kw in q_lower for kw in ["application", "applications", "credit score"]):
+                        matched_any_specific = True
+                        ans_parts.append(f"• Loan Applications History ({len(c360.applications)}):")
+                        for app in c360.applications:
+                            ans_parts.append(f"  - Application #{app.application_id} ({app.product} Loan): Requested ₹{app.requested_amount:,.2f}, Credit Score: {app.credit_score}, Decision: {app.decision_label}")
+
+                    # Fallback summary if no single dimension matched specifically
+                    if not matched_any_specific:
+                        ans_parts.append(f"• Total Working Balance: ₹{c360.total_working_balance:,.2f} across {len(c360.accounts)} account(s)")
+                        ans_parts.append(f"• Total Outstanding Loans: ₹{c360.total_outstanding_loan:,.2f} across {len(c360.loans)} loan(s) (Max DPD: {c360.max_days_past_due} Days)")
+                        ans_parts.append(f"• Regulatory e-KYC Status: {kyc.overall_status} ({kyc.completeness_percentage}% Verified)")
+                        ans_parts.append("\nTip: Ask specifically for 'working balance', 'loan accounts', 'KYC status', or type 'show all details' for the complete dataset profile.")
+
+                    deterministic_ans = "\n".join(ans_parts)
+                    final_ans = deterministic_ans
+
+                    if not rag_citations:
+                        rag_citations = [
+                            CitationEvidence(table="customers.csv", record_id=str(c.customer_id), field_name="customer_id", value=str(c.customer_id), description=f"Customer master record for {c.name_1}")
+                        ]
+
                 provider = "DuckDB-RAG Engine"
                 if ollama_avail:
-                    ollama_gen = cls.generate_ollama_completion(q_raw, deterministic_ans, target_model)
+                    ollama_gen = cls.generate_ollama_completion(q_raw, final_ans, target_model)
                     if ollama_gen:
                         final_ans = ollama_gen
                         provider = f"Ollama Local LLM ({target_model})"
@@ -298,7 +463,7 @@ class FaqService:
                     matched_faq=None,
                     confidence_score="HIGH",
                     similarity_score=0.98,
-                    explanation=f"Retrieved Customer 360 facts for {c.name_1} (ID #{c.customer_id}) from DuckDB; synthesized via {provider}.",
+                    explanation=f"Retrieved specific Customer 360 facts for {c.name_1} (ID #{c.customer_id}) from DuckDB.",
                     suggested_related_faqs=faqs[:2],
                     citations=rag_citations,
                     llm_provider=provider,
