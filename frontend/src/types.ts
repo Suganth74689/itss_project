@@ -234,3 +234,31 @@ export interface LookalikeResponse {
   lookalikes: LookalikeMatchItem[];
   citations: CitationEvidence[];
 }
+
+// --- AUTHENTICATION TYPES ---
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  full_name: string;
+  role: string;
+  department: string;
+  avatar_url?: string;
+  last_login?: string;
+}
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+  role?: string;
+  remember_me?: boolean;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  token?: string;
+  user?: AuthUser;
+}
+

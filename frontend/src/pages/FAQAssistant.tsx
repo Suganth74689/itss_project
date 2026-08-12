@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, AlertOctagon, CheckCircle2, FileText, ArrowRight, ShieldAlert, User, Cpu, Zap, Layers } from 'lucide-react';
-import type { FaqQueryResponse, FaqItem, OllamaStatusResponse } from '../types';
-import { queryFaq, fetchFaqs, fetchOllamaStatus } from '../api';
+import { Search, ShieldAlert, CheckCircle2, FileText, ArrowRight, User, Sparkles, Landmark, Bot } from 'lucide-react';
+import type { FaqQueryResponse, FaqItem } from '../types';
+import { queryFaq, fetchFaqs } from '../api';
 
 interface FAQAssistantProps {
   selectedCustomerId?: number | null;
@@ -13,12 +13,10 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
   const [loading, setLoading] = useState<boolean>(false);
   const [queryResult, setQueryResult] = useState<FaqQueryResponse | null>(null);
   const [faqsList, setFaqsList] = useState<FaqItem[]>([]);
-  const [ollamaStatus, setOllamaStatus] = useState<OllamaStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadFaqsList();
-    loadOllamaStatus();
   }, []);
 
   async function loadFaqsList() {
@@ -27,15 +25,6 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
       setFaqsList(data);
     } catch (err) {
       console.error('Failed to load FAQs list');
-    }
-  }
-
-  async function loadOllamaStatus() {
-    try {
-      const st = await fetchOllamaStatus();
-      setOllamaStatus(st);
-    } catch (err) {
-      console.error('Failed to fetch Ollama status');
     }
   }
 
@@ -49,9 +38,8 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
       const res = await queryFaq(targetQ.trim(), selectedCustomerId || undefined);
       setQueryResult(res);
       setQuestion(targetQ);
-      loadOllamaStatus();
     } catch (err: any) {
-      setError(err.message || 'Failed to process RAG query.');
+      setError(err.message || 'Failed to process inquiry.');
     } finally {
       setLoading(false);
     }
@@ -63,39 +51,30 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
     { label: '⚠️ Do I have overdue loan DPD?', query: 'Do I have any overdue loan DPD or missed EMI?', type: 'customer' },
     { label: '🚩 Suspicious transaction alerts?', query: 'Are there any suspicious transaction alerts on my account?', type: 'customer' },
     { label: '🏦 Home Loan Interest Rates?', query: 'What are the current interest rates offered on home loans?', type: 'faq' },
-    { label: '🛑 Guardrail: Who is the prime minister?', query: 'Who is the prime minister of India?', type: 'guardrail' },
+    { label: '🔒 Security: Non-banking query test', query: 'Who is the prime minister of India?', type: 'guardrail' },
   ];
 
   const answerText = queryResult?.answer || queryResult?.matched_faq?.answer || '';
 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
-      {/* 1. Nexus RAG AI Assistant Banner */}
+      {/* 1. ITSS Virtual Assistant Banner */}
       <div className="card-modern p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center space-x-3.5">
             <div className="p-3 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg shadow-blue-500/25">
-              <Layers className="w-7 h-7" />
+              <Bot className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">Nexus Banking & Ollama RAG Assistant</h2>
-                
-                {/* Live Ollama / DuckDB Status Badge */}
-                {ollamaStatus?.available ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 flex items-center gap-1.5 shadow-sm">
-                    <Cpu className="w-3.5 h-3.5 text-emerald-600" />
-                    Ollama Active ({ollamaStatus.default_model || 'llama3'})
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-blue-600" />
-                    DuckDB RAG Active (Ollama Offline)
-                  </span>
-                )}
+                <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">ITSS Bank Virtual AI Assistant</h2>
+                <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 flex items-center gap-1.5 shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  ITSS Smart AI Active
+                </span>
               </div>
               <p className="text-xs text-slate-600 mt-1 font-mono">
-                Context-Aware Customer 360 RAG & Restricted Policy Knowledge Base • Ollama Local LLM Generative RAG
+                Verified Customer Account Records & ITSS Official Banking Services Support
               </p>
             </div>
           </div>
@@ -105,7 +84,7 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-slate-700 text-xs font-mono font-bold transition-all shrink-0"
           >
             <FileText className="w-4 h-4 text-blue-600" />
-            <span>Citations ({queryResult?.citations?.length || 0})</span>
+            <span>Verified Citations ({queryResult?.citations?.length || 0})</span>
           </button>
         </div>
 
@@ -115,8 +94,8 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
             type="text"
             placeholder={
               selectedCustomerId
-                ? `Ask about Customer #${selectedCustomerId}'s balance, KYC, loans or banking policies...`
-                : 'Ask a banking policy question or select a customer for account details...'
+                ? `Ask about Customer #${selectedCustomerId}'s balance, KYC, loans or ITSS Bank services...`
+                : 'Ask an ITSS Bank policy question or select a customer for account details...'
             }
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -128,13 +107,13 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
             disabled={loading || !question.trim()}
             className="absolute right-2.5 top-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold font-mono transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-md"
           >
-            {loading ? 'Querying...' : 'Ask Assistant'}
+            {loading ? 'Processing...' : 'Ask Assistant'}
           </button>
         </form>
 
         {/* Sample Query Pills */}
         <div className="space-y-2 pt-2 border-t border-slate-200">
-          <span className="text-[11px] font-mono font-bold text-slate-500 block uppercase">Sample Queries & Guardrail Tests:</span>
+          <span className="text-[11px] font-mono font-bold text-slate-500 block uppercase">Frequently Asked Questions & Quick Inquiries:</span>
           <div className="flex items-center gap-2 flex-wrap">
             {sampleQueries.map((s, idx) => (
               <button
@@ -176,26 +155,17 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
                   </div>
                   <div>
                     <h3 className="text-base font-display font-extrabold text-slate-900">
-                      {queryResult.matched_faq?.question || (queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Customer 360 RAG Response (${queryResult.customer_name || 'Selected Customer'})` : queryResult.user_question)}
+                      {queryResult.matched_faq?.question || (queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Verified Customer Information (${queryResult.customer_name || 'Selected Customer'})` : queryResult.user_question)}
                     </h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-slate-500 font-mono">
-                        {queryResult.query_type === 'CUSTOMER_SPECIFIC' ? `Live DuckDB Core Banking Retrieval` : `Banking Policy Knowledge Engine`}
+                        ITSS Commercial Banking Intelligence
                       </span>
-                      {queryResult.llm_provider && (
-                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-mono font-bold">
-                          {queryResult.llm_provider}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
-                  queryResult.confidence_score === 'HIGH'
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                    : 'bg-amber-50 text-amber-800 border-amber-300'
-                }`}>
-                  {queryResult.confidence_score} CONFIDENCE ({queryResult.similarity_score})
+                <span className="px-3 py-1 rounded-full text-xs font-mono font-bold border bg-emerald-50 text-emerald-800 border-emerald-300">
+                  VERIFIED RESPONSE
                 </span>
               </div>
 
@@ -207,12 +177,12 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
               {/* Grounding Evidence Citations */}
               {queryResult.citations && queryResult.citations.length > 0 && (
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs font-mono">
-                  <span className="text-slate-500">Grounding Evidence: {queryResult.citations.length} DuckDB record citations</span>
+                  <span className="text-slate-500">Verified Citations: {queryResult.citations.length} ITSS Bank database record(s)</span>
                   <button
                     onClick={onOpenEvidence}
                     className="text-blue-600 hover:underline font-bold flex items-center gap-1"
                   >
-                    <span>View Evidence Drawer →</span>
+                    <span>View Citations Drawer →</span>
                   </button>
                 </div>
               )}
@@ -220,7 +190,7 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
               {/* Related FAQs */}
               {queryResult.suggested_related_faqs && queryResult.suggested_related_faqs.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-slate-200">
-                  <span className="text-[11px] font-mono font-bold text-slate-500 block uppercase">Related Banking FAQs:</span>
+                  <span className="text-[11px] font-mono font-bold text-slate-500 block uppercase">Related Banking Inquiries:</span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {queryResult.suggested_related_faqs.map((rf) => (
                       <button
@@ -240,28 +210,25 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
 
           {/* B. OUT-OF-SCOPE REFUSAL CARD */}
           {queryResult.status === 'REFUSED' && (
-            <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 space-y-4 shadow-sm">
-              <div className="flex items-center space-x-3 border-b border-rose-200 pb-3">
-                <div className="p-2.5 bg-rose-100 rounded-xl text-rose-700 border border-rose-300">
-                  <AlertOctagon className="w-6 h-6" />
+            <div className="p-6 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-4 shadow-sm">
+              <div className="flex items-center space-x-3 border-b border-amber-200 pb-3">
+                <div className="p-2.5 bg-amber-100 rounded-xl text-amber-700 border border-amber-300">
+                  <ShieldAlert className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-display font-extrabold text-slate-900">Out-of-Scope Query Refusal</h3>
-                  <p className="text-xs text-rose-700 font-mono font-bold">Safety Guardrail Enforcement</p>
+                  <h3 className="text-base font-display font-extrabold text-slate-900">ITSS Bank Security & Scope Notice</h3>
+                  <p className="text-xs text-amber-700 font-mono font-bold">Banking Inquiry Scope</p>
                 </div>
               </div>
 
               <div className="space-y-2 text-xs font-mono">
-                <p className="p-3.5 rounded-xl bg-white border border-rose-200 text-rose-900 leading-relaxed font-semibold">
-                  ⛔ {queryResult.refusal_reason}
-                </p>
-                <p className="text-slate-600">
-                  Explanation: {queryResult.explanation}
+                <p className="p-3.5 rounded-xl bg-white border border-amber-200 text-amber-900 leading-relaxed font-semibold">
+                  ℹ️ {queryResult.refusal_reason}
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-rose-200 space-y-2">
-                <span className="text-[11px] font-mono text-slate-500 block uppercase font-bold">Try Asking Authorized Banking Questions:</span>
+              <div className="pt-2 border-t border-amber-200 space-y-2">
+                <span className="text-[11px] font-mono text-slate-500 block uppercase font-bold">Try Asking ITSS Bank Questions:</span>
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => handleSearch('What is my total working balance?')}
@@ -287,10 +254,10 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
         <div className="card-modern p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <h3 className="text-base font-display font-extrabold text-slate-900 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              Verified Banking Knowledge Repository ({faqsList.length} FAQs)
+              <Landmark className="w-5 h-5 text-blue-600" />
+              ITSS Bank Official Knowledge Repository ({faqsList.length} FAQs)
             </h3>
-            <span className="text-xs text-slate-500 font-mono">faqs.json</span>
+            <span className="text-xs text-slate-500 font-mono">Verified Bank Services</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -304,7 +271,7 @@ export const FAQAssistant: React.FC<FAQAssistantProps> = ({ selectedCustomerId, 
                   <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-mono font-bold border border-blue-200">
                     {faq.category}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">ID: {faq.id}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">Ref: #{faq.id}</span>
                 </div>
                 <h4 className="font-bold text-slate-900">{faq.question}</h4>
                 <p className="text-slate-600 text-[11px] line-clamp-2 leading-relaxed">{faq.answer}</p>

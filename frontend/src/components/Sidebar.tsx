@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserCheck, ShieldAlert, HelpCircle, Users, CheckCircle2, LayoutGrid } from 'lucide-react';
+import { UserCheck, ShieldAlert, HelpCircle, Users, CheckCircle2, Landmark } from 'lucide-react';
 
 export type ModuleType = 'b1-customer360' | 'b2-kyc' | 'b3-faq' | 'b4-lookalike';
 
@@ -12,26 +12,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }
   const modules = [
     {
       id: 'b1-customer360' as ModuleType,
-      title: 'B1: Customer 360° Profile',
-      subtitle: 'Financial KPIs & Core Data',
+      title: 'Customer 360° Profile',
+      subtitle: 'Unified Account & Financial Overview',
       icon: UserCheck,
     },
     {
       id: 'b2-kyc' as ModuleType,
-      title: 'B2: e-KYC Compliance',
-      subtitle: 'Rules & Dynamic Verification',
+      title: 'e-KYC & Compliance',
+      subtitle: 'Regulatory Identity Verification',
       icon: ShieldAlert,
     },
     {
       id: 'b3-faq' as ModuleType,
-      title: 'B3: Nexus RAG AI Assistant',
-      subtitle: 'Context RAG & Ollama LLM',
+      title: 'ITSS Virtual Assistant',
+      subtitle: '24/7 Smart Banking Support',
       icon: HelpCircle,
     },
     {
       id: 'b4-lookalike' as ModuleType,
-      title: 'B4: Lookalike Risk Portfolio',
-      subtitle: 'Vector Match & Risk Mismatch',
+      title: 'Portfolio Risk Analytics',
+      subtitle: 'Peer Similarity & Credit Insights',
       icon: Users,
     },
   ];
@@ -41,9 +41,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }
       <div className="space-y-4">
         {/* Navigation Header */}
         <div className="px-3 py-2 flex items-center space-x-2 border-b border-slate-800">
-          <LayoutGrid className="w-4 h-4 text-blue-400" />
+          <Landmark className="w-4 h-4 text-blue-400" />
           <span className="text-xs font-mono font-bold text-slate-400 tracking-wider uppercase">
-            NEXUS AI MODULES
+            ITSS BANKING SERVICES
           </span>
         </div>
 
@@ -97,12 +97,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, onSelectModule }
         <div className="flex items-center justify-between text-slate-300">
           <span className="font-bold text-white flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            Project Status:
+            System Status:
           </span>
-          <span className="text-emerald-400 font-bold">100% Ready</span>
+          <span className="text-emerald-400 font-bold">ITSS Online</span>
         </div>
         <p className="text-[10px] text-slate-400 leading-tight">
-          All Modules (B1, B2, B3, B4) Fully Functional with Grounded Evidence Citations.
+          All ITSS Commercial Banking services and compliance systems fully operational.
         </p>
       </div>
     </aside>

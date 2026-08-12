@@ -1,10 +1,38 @@
 import type {
   CustomerBasicInfo, Customer360Response, KycAssessmentResponse,
   KycVerifyDocumentRequest, KycVerifyDocumentResponse, FaqQueryResponse,
-  FaqItem, LookalikeResponse, OllamaStatusResponse
+  FaqItem, LookalikeResponse, OllamaStatusResponse,
+  AuthUser, LoginCredentials, AuthResponse
 } from './types';
 
 const API_BASE = '/api';
+
+export async function loginUser(credentials: LoginCredentials): Promise<AuthResponse> {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials)
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ detail: 'Login failed' }));
+    throw new Error(errData.detail || 'Login failed. Please check credentials.');
+  }
+  return res.json();
+}
+
+export async function getCurrentUser(token: string): Promise<AuthUser> {
+  const res = await fetch(`${API_BASE}/auth/me?token=${encodeURIComponent(token)}`);
+  if (!res.ok) {
+    throw new Error('Session expired or invalid');
+  }
+  return res.json();
+}
+
+export async function logoutUser(token: string): Promise<void> {
+  await fetch(`${API_BASE}/auth/logout?token=${encodeURIComponent(token)}`, {
+    method: 'POST'
+  }).catch(() => {});
+}
 
 export async function fetchCustomers(query?: string): Promise<CustomerBasicInfo[]> {
   const url = query && query.trim() ? 

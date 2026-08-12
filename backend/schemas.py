@@ -217,3 +217,28 @@ class LookalikeResponse(BaseModel):
     target_customer_name: str
     lookalikes: List[LookalikeMatchItem]
     citations: List[CitationEvidence] = []
+
+# --- AUTHENTICATION SCHEMAS ---
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+    role: Optional[str] = None
+    remember_me: bool = True
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    email: str
+    full_name: str
+    role: str
+    department: str
+    avatar_url: Optional[str] = None
+    last_login: Optional[str] = None
+
+class LoginResponse(BaseModel):
+    success: bool
+    message: str
+    token: Optional[str] = None
+    user: Optional[UserResponse] = None
+
